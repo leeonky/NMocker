@@ -81,10 +81,8 @@ namespace nmocker
         {
             for (int i = 0; i < whens.Count; i++)
             {
-                When when = whens[i];
-                Then then = thens[i];
-                if(when.Matches(__originalMethod, __args))
-                    return then.doThen(__args, ref __result);
+                if (whens[i].Matches(__originalMethod, __args))
+                    return thens[i].doThen(__args, ref __result);
             }
             return false;
         }
