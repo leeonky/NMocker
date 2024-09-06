@@ -9,15 +9,46 @@ namespace nmocker
     public class When
     {
         private readonly MethodInfo methodInfo;
+        private List<Predicate<object>> arguments = new List<Predicate<object>>();
 
         public When(Expression<Action> action)
         {
             this.methodInfo = SymbolExtensions.GetMethodInfo(action);
+            if (action.Body is MethodCallExpression methodCallExpression)
+            {
+                foreach (var argument in methodCallExpression.Arguments)
+                {
+                    arguments.Add(actual =>
+                    NewMethod(actual, argument));
+                }
+            }
+        }
+
+        private static bool NewMethod(object actual, Expression argument)
+        {
+            return Object.Equals(actual, ((ConstantExpression)argument).Value);
         }
 
         public MethodInfo MethodInfo
         {
             get { return methodInfo; }
+        }
+
+        public bool Matches(MethodBase method, object[] __args)
+        {
+            return methodInfo == method && allArgMatches(__args);
+        }
+
+        private bool allArgMatches(object[] args)
+        {
+            if (args.Length != arguments.Count)
+                return false;
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (!arguments[i].Invoke(args[i]))
+                    return false;
+            }
+            return true;
         }
     }
 
@@ -35,35 +66,46 @@ namespace nmocker
         }
 
         private static Harmony harmony = new Harmony("Mocker");
-        private static StaticMockerAction staticMockerAction = new StaticMockerAction();
+        private static List<WhenAndThen> whenAndThens = new List<WhenAndThen>();
 
         public void ThenReturn(object value)
         {
             HarmonyMethod prefix = new HarmonyMethod(typeof(Mocker).GetMethod("ReturnPrefix"));
             harmony.Patch(when.MethodInfo, prefix);
-
-            staticMockerAction.Add(when.MethodInfo, value);
+            whenAndThens.Add(new WhenAndThen(when, value));
         }
 
-        public static bool ReturnPrefix(MethodBase __originalMethod, ref object[] __args, ref object __result)
+        public static bool ReturnPrefix(MethodBase __originalMethod, object[] __args, ref object __result)
         {
-            __result = staticMockerAction.getResult(__originalMethod);
+            foreach (var whenAndThen in whenAndThens)
+            {
+                if (whenAndThen.Matches(__originalMethod, __args))
+                    return whenAndThen.Then(__args, ref __result);
+            }
             return false;
         }
     }
 
-    public class StaticMockerAction
+    public class WhenAndThen
     {
-        private IDictionary<MethodBase, object> actions = new Dictionary<MethodBase, object>();
+        public When when;
+        public object value;
 
-        public void Add(MethodInfo method, object result)
+        public WhenAndThen(When when, object value)
         {
-            actions.Add(method, result);
+            this.when = when;
+            this.value = value;
         }
 
-        public object getResult(MethodBase method)
+        public bool Matches(MethodBase method, object[] __args)
         {
-            return actions[method];
+            return when.Matches(method, __args);
+        }
+
+        public bool Then(object[] __args, ref object __result)
+        {
+            __result = value;
+            return false;
         }
     }
 }

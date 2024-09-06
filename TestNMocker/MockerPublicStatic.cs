@@ -14,6 +14,11 @@ namespace mockerTest
                 called = true;
                 return 100;
             }
+
+            public static int method1(int i)
+            {
+                return 100;
+            }
         }
 
         [TestMethod]
@@ -25,6 +30,18 @@ namespace mockerTest
 
             Assert.AreEqual(5, Target.method());
             Assert.IsFalse(Target.called);
+        }
+
+        [TestMethod]
+        public void ReplaceMethodByReturnValueAndArgs()
+        {
+            Target.called = false;
+
+            Mocker.When(()=> Target.method1(1)).ThenReturn(5);
+            Mocker.When(()=> Target.method1(2)).ThenReturn(10);
+
+            Assert.AreEqual(5, Target.method1(1));
+            Assert.AreEqual(10, Target.method1(2));
         }
     }
 }
