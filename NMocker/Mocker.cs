@@ -1,58 +1,69 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace nmocker
 {
+    public class When
+    {
+        private readonly MethodInfo methodInfo;
+
+        public When(Expression<Action> action)
+        {
+            this.methodInfo = SymbolExtensions.GetMethodInfo(action);
+        }
+
+        public MethodInfo MethodInfo
+        {
+            get { return methodInfo; }
+        }
+    }
+
     public class Mocker
     {
-        public static StaticMocker When(Type type, string methodName)
+        public static Mocker When(Expression<Action> action)
         {
-            return new StaticMocker(type, methodName);
+            return new Mocker(new When(action));
         }
 
-        public class StaticMocker
+        private When when;
+        private Mocker(When when)
         {
-            private Type type;
-            private string methodName;
-
-            public StaticMocker(Type type, string methodName)
-            {
-                this.type = type;
-                this.methodName = methodName;
-            }
-            private static Harmony harmony = new Harmony("Mocker");
-            private static StaticMockerAction staticMockerAction = new StaticMockerAction();
-
-            public void ThenReturn(object value)
-            {
-                HarmonyMethod prefix = new HarmonyMethod(typeof(StaticMocker).GetMethod("ReturnPrefix"));
-                MethodInfo methodInfo = type.GetMethod(methodName);
-                staticMockerAction.Add(methodInfo, value);
-                harmony.Patch(methodInfo, prefix);
-            }
-
-            public static bool ReturnPrefix(MethodBase __originalMethod, ref object[] __args, ref object __result)
-            {
-                __result = staticMockerAction.getResult(__originalMethod);
-                return false;
-            }
+            this.when = when;
         }
 
-        public class StaticMockerAction
+        private static Harmony harmony = new Harmony("Mocker");
+        private static StaticMockerAction staticMockerAction = new StaticMockerAction();
+
+        public void ThenReturn(object value)
         {
-            private IDictionary<MethodBase, object> actions = new Dictionary<MethodBase, object>();
+            HarmonyMethod prefix = new HarmonyMethod(typeof(Mocker).GetMethod("ReturnPrefix"));
+            harmony.Patch(when.MethodInfo, prefix);
 
-            public void Add(MethodInfo method, object result)
-            {
-                actions.Add(method, result);
-            }
+            staticMockerAction.Add(when.MethodInfo, value);
+        }
 
-            public object getResult(MethodBase method)
-            {
-                return actions[method];
-            }
+        public static bool ReturnPrefix(MethodBase __originalMethod, ref object[] __args, ref object __result)
+        {
+            __result = staticMockerAction.getResult(__originalMethod);
+            return false;
+        }
+    }
+
+    public class StaticMockerAction
+    {
+        private IDictionary<MethodBase, object> actions = new Dictionary<MethodBase, object>();
+
+        public void Add(MethodInfo method, object result)
+        {
+            actions.Add(method, result);
+        }
+
+        public object getResult(MethodBase method)
+        {
+            return actions[method];
         }
     }
 }

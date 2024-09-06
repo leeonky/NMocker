@@ -21,7 +21,7 @@ namespace mockerTest
         {
             Target.called = false;
 
-            Mocker.When(typeof(Target), "method").ThenReturn(5);
+            Mocker.When(()=> Target.method()).ThenReturn(5);
 
             Assert.AreEqual(5, Target.method());
             Assert.IsFalse(Target.called);
