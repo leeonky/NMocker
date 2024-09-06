@@ -66,45 +66,42 @@ namespace nmocker
         }
 
         private static Harmony harmony = new Harmony("Mocker");
-        private static List<WhenAndThen> whenAndThens = new List<WhenAndThen>();
+        private static List<When> whens = new List<When>();
+        private static List<Then> thens = new List<Then>();
 
         public void ThenReturn(object value)
         {
             HarmonyMethod prefix = new HarmonyMethod(typeof(Mocker).GetMethod("ReturnPrefix"));
             harmony.Patch(when.MethodInfo, prefix);
-            whenAndThens.Add(new WhenAndThen(when, value));
+            whens.Add(when);
+            thens.Add(new Then(value));
         }
 
         public static bool ReturnPrefix(MethodBase __originalMethod, object[] __args, ref object __result)
         {
-            foreach (var whenAndThen in whenAndThens)
+            for (int i = 0; i < whens.Count; i++)
             {
-                if (whenAndThen.Matches(__originalMethod, __args))
-                    return whenAndThen.Then(__args, ref __result);
+                When when = whens[i];
+                Then then = thens[i];
+                if(when.Matches(__originalMethod, __args))
+                    return then.doThen(__args, ref __result);
             }
             return false;
         }
     }
 
-    public class WhenAndThen
+    public class Then
     {
-        public When when;
-        public object value;
+        private object value;
 
-        public WhenAndThen(When when, object value)
+        public Then(object value)
         {
-            this.when = when;
             this.value = value;
         }
 
-        public bool Matches(MethodBase method, object[] __args)
+        public bool doThen(object[] args, ref object result)
         {
-            return when.Matches(method, __args);
-        }
-
-        public bool Then(object[] __args, ref object __result)
-        {
-            __result = value;
+            result = value;
             return false;
         }
     }
