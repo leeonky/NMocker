@@ -2,46 +2,37 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Linq;
 using System.Reflection;
 
 namespace nmocker
 {
-    public class When
+    public class Mocker
     {
         private readonly MethodInfo methodInfo;
         private List<Predicate<object>> arguments = new List<Predicate<object>>();
+        private Then then;
 
-        public When(Expression<Action> action)
+        private Mocker(Expression<Action> action)
         {
             this.methodInfo = SymbolExtensions.GetMethodInfo(action);
             if (action.Body is MethodCallExpression methodCallExpression)
             {
                 foreach (var argument in methodCallExpression.Arguments)
                 {
-                    arguments.Add(actual =>
-                    NewMethod(actual, argument));
+                    arguments.Add(actual => argMatcher(actual, argument));
                 }
             }
         }
 
-        private static bool NewMethod(object actual, Expression argument)
+        private static bool argMatcher(object actual, Expression argument)
         {
             return Object.Equals(actual, ((ConstantExpression)argument).Value);
         }
 
-        public MethodInfo MethodInfo
+        public bool Matches(MethodBase method, object[] args)
         {
-            get { return methodInfo; }
-        }
-
-        public bool Matches(MethodBase method, object[] __args)
-        {
-            return methodInfo == method && allArgMatches(__args);
-        }
-
-        private bool allArgMatches(object[] args)
-        {
-            if (args.Length != arguments.Count)
+            if (methodInfo != method || args.Length != arguments.Count)
                 return false;
             for (int i = 0; i < args.Length; i++)
             {
@@ -50,48 +41,50 @@ namespace nmocker
             }
             return true;
         }
-    }
 
-    public class Mocker
-    {
-        public static Mocker When(Expression<Action> action)
+        public bool Then(object[] args, ref object result)
         {
-            return new Mocker(new When(action));
-        }
-
-        private When when;
-        private Mocker(When when)
-        {
-            this.when = when;
+            return then.doThen(args, ref result);
         }
 
         private static Harmony harmony = new Harmony("Mocker");
-        private static List<When> whens = new List<When>();
-        private static List<Then> thens = new List<Then>();
+        private static List<Mocker> mockers = new List<Mocker>();
+        private static HashSet<MethodInfo> patches = new HashSet<MethodInfo>();
 
         public void ThenReturn(object value)
         {
-            HarmonyMethod prefix = new HarmonyMethod(typeof(Mocker).GetMethod("ReturnPrefix"));
-            harmony.Patch(when.MethodInfo, prefix);
-            whens.Add(when);
-            thens.Add(new Then(value));
+            ThenReturn(new Then(value));
+        }
+
+        private void ThenReturn(Then then)
+        {
+            if (!patches.Contains(methodInfo))
+            {
+                harmony.Patch(methodInfo, new HarmonyMethod(GetType().GetMethod("ReturnPrefix")));
+                patches.Add(methodInfo);
+            }
+            mockers.Add(this);
+            this.then = then;
         }
 
         public static bool ReturnPrefix(MethodBase __originalMethod, object[] __args, ref object __result)
         {
-            for (int i = 0; i < whens.Count; i++)
-            {
-                if (whens[i].Matches(__originalMethod, __args))
-                    return thens[i].doThen(__args, ref __result);
-            }
+            Mocker mocker = mockers.FirstOrDefault(m => m.Matches(__originalMethod, __args));
+            if( mocker!=null)
+                    return mocker.Then(__args, ref __result);
             return false;
+        }
+
+        public static Mocker When(Expression<Action> action)
+        {
+            return new Mocker(action);
         }
 
         public static void clear()
         {
             harmony.UnpatchAll();
-            whens.Clear();
-            thens.Clear();
+            mockers.Clear();
+            patches.Clear();
         }
     }
 
