@@ -63,5 +63,16 @@ namespace mockerTest
             Assert.AreEqual(5, Target.method1(1));
             Assert.AreEqual(10, Target.method1(2));
         }
+
+        [TestMethod]
+        public void override_privours_stub()
+        {
+            Target.called = false;
+
+            Mocker.When(()=> Target.method1(1)).ThenReturn(5);
+            Mocker.When(()=> Target.method1(1)).ThenReturn(10);
+
+            Assert.AreEqual(10, Target.method1(1));
+        }
     }
 }

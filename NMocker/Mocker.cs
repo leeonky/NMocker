@@ -69,7 +69,7 @@ namespace nmocker
 
         public static bool ReturnPrefix(MethodBase __originalMethod, object[] __args, ref object __result)
         {
-            Mocker mocker = mockers.FirstOrDefault(m => m.Matches(__originalMethod, __args));
+            Mocker mocker = mockers.LastOrDefault(m => m.Matches(__originalMethod, __args));
             if( mocker!=null)
                     return mocker.Then(__args, ref __result);
             return false;
