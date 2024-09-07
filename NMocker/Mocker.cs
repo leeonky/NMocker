@@ -20,14 +20,23 @@ namespace nmocker
             {
                 foreach (var argument in methodCallExpression.Arguments)
                 {
-                    arguments.Add(actual => argMatcher(actual, argument));
+                    arguments.Add(argMatcher(argument));
                 }
             }
         }
 
-        private static bool argMatcher(object actual, Expression argument)
+        private static Predicate<object> argMatcher(Expression argument)
         {
-            return Object.Equals(actual, ((ConstantExpression)argument).Value);
+            if (argument is ConstantExpression)
+                return actual => Object.Equals(actual, ((ConstantExpression)argument).Value);
+            if (argument is MethodCallExpression methodCall)
+            {
+                if (methodCall.Method.IsGenericMethod && methodCall.Method.GetGenericMethodDefinition() == typeof(Arg).GetMethod("Any"))
+                {
+                    return actual => true;
+                }
+            }
+            throw new InvalidOperationException();
         }
 
         public bool Matches(MethodBase method, object[] args)
@@ -44,7 +53,7 @@ namespace nmocker
 
         public bool Then(object[] args, ref object result)
         {
-            return then.doThen(args, ref result);
+            return then.DoThen(args, ref result);
         }
 
         private static Harmony harmony = new Harmony("Mocker");
@@ -70,8 +79,8 @@ namespace nmocker
         public static bool ReturnPrefix(MethodBase __originalMethod, object[] __args, ref object __result)
         {
             Mocker mocker = mockers.LastOrDefault(m => m.Matches(__originalMethod, __args));
-            if( mocker!=null)
-                    return mocker.Then(__args, ref __result);
+            if (mocker != null)
+                return mocker.Then(__args, ref __result);
             return false;
         }
 
@@ -80,7 +89,7 @@ namespace nmocker
             return new Mocker(action);
         }
 
-        public static void clear()
+        public static void Clear()
         {
             harmony.UnpatchAll();
             mockers.Clear();
@@ -97,10 +106,18 @@ namespace nmocker
             this.value = value;
         }
 
-        public bool doThen(object[] args, ref object result)
+        public bool DoThen(object[] args, ref object result)
         {
             result = value;
             return false;
+        }
+    }
+
+    public class Arg
+    {
+        public static T Any<T>()
+        {
+            throw new InvalidOperationException();
         }
     }
 }

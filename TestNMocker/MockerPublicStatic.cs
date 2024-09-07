@@ -19,13 +19,17 @@ namespace mockerTest
             {
                 return 100;
             }
+            public static int method1(string s)
+            {
+                return 200;
+            }
         }
 
 
         [TestInitialize]
         public void setup()
         {
-            Mocker.clear();
+            Mocker.Clear();
         }
 
         [TestMethod]
@@ -36,7 +40,7 @@ namespace mockerTest
 
             Target.called = false;
 
-            Mocker.When(()=> Target.method()).ThenReturn(5);
+            Mocker.When(() => Target.method()).ThenReturn(5);
 
             Assert.AreEqual(5, Target.method());
             Assert.IsFalse(Target.called);
@@ -45,8 +49,8 @@ namespace mockerTest
         [TestMethod]
         public void reset_stub_after_clear()
         {
-            Mocker.When(()=> Target.method()).ThenReturn(5);
-            Mocker.clear();
+            Mocker.When(() => Target.method()).ThenReturn(5);
+            Mocker.Clear();
 
             Assert.AreEqual(100, Target.method());
             Assert.IsTrue(Target.called);
@@ -55,10 +59,8 @@ namespace mockerTest
         [TestMethod]
         public void stub_static_method_with_returned_value_and_args()
         {
-            Target.called = false;
-
-            Mocker.When(()=> Target.method1(1)).ThenReturn(5);
-            Mocker.When(()=> Target.method1(2)).ThenReturn(10);
+            Mocker.When(() => Target.method1(1)).ThenReturn(5);
+            Mocker.When(() => Target.method1(2)).ThenReturn(10);
 
             Assert.AreEqual(5, Target.method1(1));
             Assert.AreEqual(10, Target.method1(2));
@@ -67,12 +69,19 @@ namespace mockerTest
         [TestMethod]
         public void override_privours_stub()
         {
-            Target.called = false;
-
-            Mocker.When(()=> Target.method1(1)).ThenReturn(5);
-            Mocker.When(()=> Target.method1(1)).ThenReturn(10);
+            Mocker.When(() => Target.method1(1)).ThenReturn(5);
+            Mocker.When(() => Target.method1(1)).ThenReturn(10);
 
             Assert.AreEqual(10, Target.method1(1));
+        }
+
+        [TestMethod]
+        public void support_arg_any_match()
+        {
+            Mocker.When(() => Target.method1(Arg.Any<int>())).ThenReturn(5);
+
+            Assert.AreEqual(5, Target.method1(1));
+            Assert.AreEqual(5, Target.method1(2));
         }
     }
 }
