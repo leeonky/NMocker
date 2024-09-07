@@ -4,7 +4,7 @@ using nmocker;
 namespace mockerTest
 {
     [TestClass]
-    public partial class MockerPublicStaticMethod
+    public class MockerPublicStaticMethod
     {
         public class Target
         {
@@ -21,9 +21,19 @@ namespace mockerTest
             }
         }
 
-        [TestMethod]
-        public void ReplaceMethodByReturnValue()
+
+        [TestInitialize]
+        public void setup()
         {
+            Mocker.clear();
+        }
+
+        [TestMethod]
+        public void stub_static_method_with_returned_value()
+        {
+            Assert.AreEqual(100, Target.method());
+            Assert.IsTrue(Target.called);
+
             Target.called = false;
 
             Mocker.When(()=> Target.method()).ThenReturn(5);
@@ -33,7 +43,17 @@ namespace mockerTest
         }
 
         [TestMethod]
-        public void ReplaceMethodByReturnValueAndArgs()
+        public void reset_stub_after_clear()
+        {
+            Mocker.When(()=> Target.method()).ThenReturn(5);
+            Mocker.clear();
+
+            Assert.AreEqual(100, Target.method());
+            Assert.IsTrue(Target.called);
+        }
+
+        [TestMethod]
+        public void stub_static_method_with_returned_value_and_args()
         {
             Target.called = false;
 

@@ -86,6 +86,13 @@ namespace nmocker
             }
             return false;
         }
+
+        public static void clear()
+        {
+            harmony.UnpatchAll();
+            whens.Clear();
+            thens.Clear();
+        }
     }
 
     public class Then
