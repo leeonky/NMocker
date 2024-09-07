@@ -83,5 +83,15 @@ namespace mockerTest
             Assert.AreEqual(5, Target.method1(1));
             Assert.AreEqual(5, Target.method1(2));
         }
+
+        [TestMethod]
+        public void support_customer_arg_match()
+        {
+            Mocker.When(() => Target.method1(Arg.That<int>(i => i > 5))).ThenReturn(5);
+
+            Assert.AreEqual(0, Target.method1(4));
+            Assert.AreEqual(0, Target.method1(5));
+            Assert.AreEqual(5, Target.method1(6));
+        }
     }
 }

@@ -35,6 +35,11 @@ namespace nmocker
                 {
                     return actual => true;
                 }
+                if (methodCall.Method.IsGenericMethod && methodCall.Method.GetGenericMethodDefinition() == typeof(Arg).GetMethod("That"))
+                {
+                    Delegate lambda = ((LambdaExpression)methodCall.Arguments[0]).Compile();
+                    return actual => (bool)lambda.DynamicInvoke(actual);
+                }
             }
             throw new InvalidOperationException();
         }
@@ -116,6 +121,11 @@ namespace nmocker
     public class Arg
     {
         public static T Any<T>()
+        {
+            throw new InvalidOperationException();
+        }
+
+        public static T That<T>(Predicate<T> matcher)
         {
             throw new InvalidOperationException();
         }
