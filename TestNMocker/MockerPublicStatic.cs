@@ -113,5 +113,14 @@ namespace mockerTest
             Assert.AreEqual(0, Target.method1(5));
             Assert.AreEqual(5, Target.method1(6));
         }
+
+        [TestMethod]
+        public void support_stub_by_lambda()
+        {
+            Mocker.When(() => Target.method1(Arg.Any<int>())).Then(args => ((int)args[0])+1);
+
+            Assert.AreEqual(2, Target.method1(1));
+            Assert.AreEqual(3, Target.method1(2));
+        }
     }
 }

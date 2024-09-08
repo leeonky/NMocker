@@ -65,11 +65,6 @@ namespace nmocker
         private static List<Mocker> mockers = new List<Mocker>();
         private static HashSet<MethodInfo> patches = new HashSet<MethodInfo>();
 
-        public void ThenReturn(object value)
-        {
-            ThenReturn(new Then(value));
-        }
-
         private void ThenReturn(Then then)
         {
             if (!patches.Contains(methodInfo))
@@ -94,6 +89,15 @@ namespace nmocker
             return new Mocker(action);
         }
 
+        public void ThenReturn(object value)
+        {
+            ThenReturn(new ThenValue(value));
+        }
+        public void Then(Func<object[], object> then)
+        {
+            ThenReturn(new ThenLambda(then));
+        }
+
         public static void Clear()
         {
             harmony.UnpatchAll();
@@ -102,21 +106,43 @@ namespace nmocker
         }
     }
 
-    public class Then
+    public abstract class Then
+    {
+        public abstract bool DoThen(object[] args, ref object result);
+    }
+
+    public class ThenValue : Then
     {
         private object value;
 
-        public Then(object value)
+        public ThenValue(object value)
         {
             this.value = value;
         }
 
-        public bool DoThen(object[] args, ref object result)
+        public override bool DoThen(object[] args, ref object result)
         {
             result = value;
             return false;
         }
     }
+
+    public class ThenLambda : Then
+    {
+        private Func<object[], object> then;
+
+        public ThenLambda(Func<object[], object> then)
+        {
+            this.then = then;
+        }
+
+        public override bool DoThen(object[] args, ref object result)
+        {
+            result = then.Invoke(args);
+            return false;
+        }
+    }
+
 
     public class Arg
     {
