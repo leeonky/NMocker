@@ -23,6 +23,12 @@ namespace mockerTest
             {
                 return 200;
             }
+
+            public static int invoke_method()
+            {
+                int res = method();
+                return res;
+            }
         }
 
 
@@ -43,6 +49,20 @@ namespace mockerTest
             Mocker.When(() => Target.method()).ThenReturn(5);
 
             Assert.AreEqual(5, Target.method());
+            Assert.IsFalse(Target.called);
+        }
+
+        [TestMethod]
+        public void invoke_stub_static_method_with_returned_value()
+        {
+            Assert.AreEqual(100, Target.method());
+            Assert.IsTrue(Target.called);
+
+            Target.called = false;
+
+            Mocker.When(() => Target.method()).ThenReturn(5);
+
+            Assert.AreEqual(5, Target.invoke_method());
             Assert.IsFalse(Target.called);
         }
 
