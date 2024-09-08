@@ -98,6 +98,11 @@ namespace nmocker
             ThenReturn(new ThenLambda(then));
         }
 
+        public void ThenCallActual()
+        {
+            ThenReturn(new ThenActual());
+        }
+
         public static void Clear()
         {
             harmony.UnpatchAll();
@@ -143,6 +148,13 @@ namespace nmocker
         }
     }
 
+    public class ThenActual : Then
+    {
+        public override bool DoThen(object[] args, ref object result)
+        {
+            return true;
+        }
+    }
 
     public class Arg
     {

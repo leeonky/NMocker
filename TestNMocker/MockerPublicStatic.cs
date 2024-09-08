@@ -117,10 +117,22 @@ namespace mockerTest
         [TestMethod]
         public void support_stub_by_lambda()
         {
-            Mocker.When(() => Target.method1(Arg.Any<int>())).Then(args => ((int)args[0])+1);
+            Mocker.When(() => Target.method1(Arg.Any<int>())).Then(args => ((int)args[0]) + 1);
 
             Assert.AreEqual(2, Target.method1(1));
             Assert.AreEqual(3, Target.method1(2));
+        }
+
+
+        [TestMethod]
+        public void support_call_real()
+        {
+            Mocker.When(() => Target.method1(Arg.Any<int>())).Then(args => ((int)args[0]) + 1);
+            Mocker.When(() => Target.method1(10)).ThenCallActual();
+
+            Assert.AreEqual(2, Target.method1(1));
+            Assert.AreEqual(3, Target.method1(2));
+            Assert.AreEqual(100, Target.method1(10));
         }
     }
 }
