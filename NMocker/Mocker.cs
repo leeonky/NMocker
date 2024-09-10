@@ -9,48 +9,12 @@ namespace nmocker
 {
     public class Mocker
     {
-        private readonly MethodInfo methodInfo;
-        private List<Predicate<object>> arguments;
+        private readonly InvocationMatcher invocationMatcher;
         private Then then;
 
-        private Mocker(MethodInfo methodInfo, List<Predicate<object>> arguments)
+        private Mocker(InvocationMatcher invocationMatcher)
         {
-            this.methodInfo = methodInfo;
-            this.arguments = new List<Predicate<object>>(arguments);
-        }
-
-        private static Predicate<object> argMatcher(Expression argument)
-        {
-            if (argument is ConstantExpression)
-                return actual => Object.Equals(actual, ((ConstantExpression)argument).Value);
-            if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert)
-            {
-                if (unaryExpression.Operand is MethodCallExpression methodCall
-                    && methodCall.Method.DeclaringType.IsGenericType
-                    && methodCall.Method.DeclaringType.GetGenericTypeDefinition() == typeof(Arg<>))
-                {
-                    IArg a = (IArg)Expression.Lambda(methodCall).Compile().DynamicInvoke();
-                    return a.Predicate;
-                }
-            }
-            throw new InvalidOperationException();
-        }
-
-        public bool Matches(MethodBase method, object[] args)
-        {
-            if (methodInfo != method || args.Length != arguments.Count)
-                return false;
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (!arguments[i].Invoke(args[i]))
-                    return false;
-            }
-            return true;
-        }
-
-        public bool Then(object[] args, ref object result)
-        {
-            return then.DoThen(args, ref result);
+            this.invocationMatcher = invocationMatcher;
         }
 
         private static Harmony harmony = new Harmony("Mocker");
@@ -59,10 +23,10 @@ namespace nmocker
 
         private void ThenReturn(Then then)
         {
-            if (!patches.Contains(methodInfo))
+            if (!patches.Contains(invocationMatcher.Method))
             {
-                harmony.Patch(methodInfo, new HarmonyMethod(GetType().GetMethod("ReturnPrefix")));
-                patches.Add(methodInfo);
+                harmony.Patch(invocationMatcher.Method, new HarmonyMethod(GetType().GetMethod("ReturnPrefix")));
+                patches.Add(invocationMatcher.Method);
             }
             mockers.Add(this);
             this.then = then;
@@ -70,37 +34,28 @@ namespace nmocker
 
         public static bool ReturnPrefix(MethodBase __originalMethod, object[] __args, ref object __result)
         {
-            Mocker mocker = mockers.LastOrDefault(m => m.Matches(__originalMethod, __args));
+            Invocation invocation = Invocation.ActualCall(__originalMethod, null, __args);
+            Mocker mocker = mockers.LastOrDefault(m => m.invocationMatcher.Matches(invocation));
             if (mocker != null)
-                return mocker.Then(__args, ref __result);
+                return mocker.then.DoThen(__args, ref __result);
             return false;
         }
 
         public static Mocker When(Expression<Action> action)
         {
-            if (action.Body is MethodCallExpression methodCallExpression)
-            {
-                List<Predicate<object>> arguments = new List<Predicate<object>>();
-                foreach (var argument in methodCallExpression.Arguments)
-                {
-                    arguments.Add(argMatcher(argument));
-                }
-                return new Mocker(SymbolExtensions.GetMethodInfo(action), arguments);
-            }
-            throw new InvalidOperationException();
+            return new Mocker(InvocationMatcher.Create(action));
         }
 
         public static Mocker When(Type type, string method, params IArg[] args)
         {
-            Func<MethodInfo, bool> targetMethod = m => m.IsStatic && m.Name == method
-                && m.GetParameters().Select(p => p.ParameterType).ToArray().SequenceEqual(args.Select(a => a.Type).ToArray());
-            return new Mocker(type.GetDeclaredMethods().First(targetMethod), args.Select(a => a.Predicate).ToList());
+            return new Mocker(InvocationMatcher.Create(type, method, args));
         }
 
         public void ThenReturn(object value)
         {
             ThenReturn(new ThenValue(value));
         }
+
         public void Then(Func<object[], object> then)
         {
             ThenReturn(new ThenLambda(then));
@@ -116,6 +71,7 @@ namespace nmocker
             harmony.UnpatchAll();
             mockers.Clear();
             patches.Clear();
+            Invocation.Clear();
         }
     }
 

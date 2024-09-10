@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using nmocker;
 
-namespace mockerTest
+namespace TestNMocker
 {
     [TestClass]
     public class StubPublicStaticMethod
