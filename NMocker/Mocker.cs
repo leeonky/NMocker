@@ -29,16 +29,14 @@ namespace nmocker
         {
             if (argument is ConstantExpression)
                 return actual => Object.Equals(actual, ((ConstantExpression)argument).Value);
-            if (argument is MethodCallExpression methodCall)
+            if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert)
             {
-                if (methodCall.Method.IsGenericMethod && methodCall.Method.GetGenericMethodDefinition() == typeof(Arg).GetMethod("Any"))
+                if (unaryExpression.Operand is MethodCallExpression methodCall
+                    && methodCall.Method.DeclaringType.IsGenericType
+                    && methodCall.Method.DeclaringType.GetGenericTypeDefinition() == typeof(Arg<>))
                 {
-                    return actual => true;
-                }
-                if (methodCall.Method.IsGenericMethod && methodCall.Method.GetGenericMethodDefinition() == typeof(Arg).GetMethod("That"))
-                {
-                    Delegate lambda = ((LambdaExpression)methodCall.Arguments[0]).Compile();
-                    return actual => (bool)lambda.DynamicInvoke(actual);
+                    IArg a = (IArg)Expression.Lambda(methodCall).Compile().DynamicInvoke();
+                    return actual => a.Matches(actual);
                 }
             }
             throw new InvalidOperationException();
@@ -156,16 +154,39 @@ namespace nmocker
         }
     }
 
-    public class Arg
+
+    interface IArg
     {
-        public static T Any<T>()
+        bool Matches(object a);
+    }
+
+    public class Arg<A> : IArg
+    {
+        private Predicate<A> matcher;
+
+        public Arg(Predicate<A> matcher)
         {
-            throw new InvalidOperationException();
+            this.matcher = matcher;
         }
 
-        public static T That<T>(Predicate<T> matcher)
+        public static Arg<A> Any()
         {
-            throw new InvalidOperationException();
+            return new Arg<A>(a => true);
+        }
+
+        public static Arg<A> That(Predicate<A> matcher)
+        {
+            return new Arg<A>(matcher);
+        }
+
+        public static implicit operator A(Arg<A> arg)
+        {
+            return default(A);
+        }
+
+        public bool Matches(object a)
+        {
+            return matcher.Invoke((A)a);
         }
     }
 }

@@ -4,7 +4,7 @@ using nmocker;
 namespace mockerTest
 {
     [TestClass]
-    public class MockerPublicStaticMethod
+    public class StubPublicStaticMethod
     {
         public class Target
         {
@@ -98,7 +98,7 @@ namespace mockerTest
         [TestMethod]
         public void support_arg_any_match()
         {
-            Mocker.When(() => Target.method1(Arg.Any<int>())).ThenReturn(5);
+            Mocker.When(() => Target.method1(Arg<int>.Any())).ThenReturn(5);
 
             Assert.AreEqual(5, Target.method1(1));
             Assert.AreEqual(5, Target.method1(2));
@@ -107,7 +107,7 @@ namespace mockerTest
         [TestMethod]
         public void support_customer_arg_match()
         {
-            Mocker.When(() => Target.method1(Arg.That<int>(i => i > 5))).ThenReturn(5);
+            Mocker.When(() => Target.method1(Arg<int>.That(i => i > 5))).ThenReturn(5);
 
             Assert.AreEqual(0, Target.method1(4));
             Assert.AreEqual(0, Target.method1(5));
@@ -117,22 +117,59 @@ namespace mockerTest
         [TestMethod]
         public void support_stub_by_lambda()
         {
-            Mocker.When(() => Target.method1(Arg.Any<int>())).Then(args => ((int)args[0]) + 1);
+            Mocker.When(() => Target.method1(Arg<int>.Any())).Then(args => ((int)args[0]) + 1);
 
             Assert.AreEqual(2, Target.method1(1));
             Assert.AreEqual(3, Target.method1(2));
         }
 
-
         [TestMethod]
         public void support_call_real()
         {
-            Mocker.When(() => Target.method1(Arg.Any<int>())).Then(args => ((int)args[0]) + 1);
+            Mocker.When(() => Target.method1(Arg<int>.Any())).Then(args => ((int)args[0]) + 1);
             Mocker.When(() => Target.method1(10)).ThenCallActual();
 
             Assert.AreEqual(2, Target.method1(1));
             Assert.AreEqual(3, Target.method1(2));
             Assert.AreEqual(100, Target.method1(10));
+        }
+    }
+
+    [TestClass]
+    public class StubPrivateStaticMethod
+    {
+        public class Target
+        {
+            private static int privateStatic(int i)
+            {
+                return 100;
+            }
+            private static int privateStatic(string i)
+            {
+                return 200;
+            }
+
+            public static int invokePrivateStaticInt()
+            {
+                return privateStatic(1);
+            }
+            public static int invokePrivateStaticString()
+            {
+                return privateStatic("1");
+            }
+        }
+
+
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+        }
+
+        [TestMethod]
+        public void support_stub_private_method()
+        {
+            //Mocker.When(typeof(Target), "privateStatic", Arg.Any<int>()).ThenCallActual();
         }
     }
 }
