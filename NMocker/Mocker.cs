@@ -10,19 +10,13 @@ namespace nmocker
     public class Mocker
     {
         private readonly MethodInfo methodInfo;
-        private List<Predicate<object>> arguments = new List<Predicate<object>>();
+        private List<Predicate<object>> arguments;
         private Then then;
 
-        private Mocker(Expression<Action> action)
+        private Mocker(MethodInfo methodInfo, List<Predicate<object>> arguments)
         {
-            this.methodInfo = SymbolExtensions.GetMethodInfo(action);
-            if (action.Body is MethodCallExpression methodCallExpression)
-            {
-                foreach (var argument in methodCallExpression.Arguments)
-                {
-                    arguments.Add(argMatcher(argument));
-                }
-            }
+            this.methodInfo = methodInfo;
+            this.arguments = new List<Predicate<object>>(arguments);
         }
 
         private static Predicate<object> argMatcher(Expression argument)
@@ -36,7 +30,7 @@ namespace nmocker
                     && methodCall.Method.DeclaringType.GetGenericTypeDefinition() == typeof(Arg<>))
                 {
                     IArg a = (IArg)Expression.Lambda(methodCall).Compile().DynamicInvoke();
-                    return actual => a.Matches(actual);
+                    return a.Predicate;
                 }
             }
             throw new InvalidOperationException();
@@ -84,7 +78,23 @@ namespace nmocker
 
         public static Mocker When(Expression<Action> action)
         {
-            return new Mocker(action);
+            if (action.Body is MethodCallExpression methodCallExpression)
+            {
+                List<Predicate<object>> arguments = new List<Predicate<object>>();
+                foreach (var argument in methodCallExpression.Arguments)
+                {
+                    arguments.Add(argMatcher(argument));
+                }
+                return new Mocker(SymbolExtensions.GetMethodInfo(action), arguments);
+            }
+            throw new InvalidOperationException();
+        }
+
+        public static Mocker When(Type type, string method, params IArg[] args)
+        {
+            Func<MethodInfo, bool> targetMethod = m => m.IsStatic && m.Name == method
+                && m.GetParameters().Select(p => p.ParameterType).ToArray().SequenceEqual(args.Select(a => a.Type).ToArray());
+            return new Mocker(type.GetDeclaredMethods().First(targetMethod), args.Select(a => a.Predicate).ToList());
         }
 
         public void ThenReturn(object value)
@@ -154,24 +164,31 @@ namespace nmocker
         }
     }
 
-
-    interface IArg
+    public interface IArg
     {
-        bool Matches(object a);
+        Predicate<object> Predicate
+        {
+            get;
+        }
+
+        Type Type
+        {
+            get;
+        }
     }
 
     public class Arg<A> : IArg
     {
-        private Predicate<A> matcher;
+        private Predicate<object> matcher;
 
         public Arg(Predicate<A> matcher)
         {
-            this.matcher = matcher;
+            this.matcher = actual => matcher.Invoke((A)actual);
         }
 
         public static Arg<A> Any()
         {
-            return new Arg<A>(a => true);
+            return That(a => true);
         }
 
         public static Arg<A> That(Predicate<A> matcher)
@@ -184,9 +201,17 @@ namespace nmocker
             return default(A);
         }
 
-        public bool Matches(object a)
+        public Predicate<object> Predicate
         {
-            return matcher.Invoke((A)a);
+            get
+            {
+                return matcher;
+            }
+        }
+
+        public Type Type
+        {
+            get { return typeof(A); }
         }
     }
 }

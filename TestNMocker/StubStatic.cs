@@ -169,7 +169,9 @@ namespace mockerTest
         [TestMethod]
         public void support_stub_private_method()
         {
-            //Mocker.When(typeof(Target), "privateStatic", Arg.Any<int>()).ThenCallActual();
+            Mocker.When(typeof(Target), "privateStatic", Arg<int>.Any()).ThenReturn(1);
+
+            Assert.AreEqual(1, Target.invokePrivateStaticInt());
         }
     }
 }
