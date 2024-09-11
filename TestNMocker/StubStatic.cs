@@ -173,5 +173,13 @@ namespace TestNMocker
 
             Assert.AreEqual(1, Target.invokePrivateStaticInt());
         }
+
+        [TestMethod]
+        public void user_raw_arg_value_in()
+        {
+            Mocker.When(typeof(Target), "privateStatic", 1).ThenReturn(1);
+
+            Assert.AreEqual(1, Target.invokePrivateStaticInt());
+        }
     }
 }

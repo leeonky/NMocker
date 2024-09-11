@@ -26,6 +26,11 @@ namespace nmocker
             new Verifier(times, InvocationMatcher.Create(calling)).Verify();
         }
 
+        public static void NoCalls(Expression<Action> calling)
+        {
+            new Verifier(0, InvocationMatcher.Create(calling)).Verify();
+        }
+
         private void Verify()
         {
             int matched = Invocation.Matched(invocationMatcher);
@@ -35,10 +40,12 @@ namespace nmocker
                 message.Append(string.Format("Unsatisfied invocation verification at {0}:{1}", file, line));
                 message.Append("\nAll invocations:\n");
                 message.Append(Invocation.Dump(invocationMatcher));
-                message.Append(string.Format("Expected to call {0} times, but actually call {1} times.", times, matched));
+                if(times == 0)
+                    message.Append(string.Format("Expected no call, but actually call {1} times.", times, matched));
+                else
+                    message.Append(string.Format("Expected to call {0} times, but actually call {1} times.", times, matched));
                 throw new UnexpectedCallException(message.ToString());
             }
         }
-
     }
 }

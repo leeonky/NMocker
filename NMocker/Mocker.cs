@@ -17,9 +17,9 @@ namespace nmocker
             this.invocationMatcher = invocationMatcher;
         }
 
-        private static Harmony harmony = new Harmony("Mocker");
-        private static List<Mocker> mockers = new List<Mocker>();
-        private static HashSet<MethodInfo> patches = new HashSet<MethodInfo>();
+        private readonly static Harmony harmony = new Harmony("Mocker");
+        private readonly static List<Mocker> mockers = new List<Mocker>();
+        private readonly static HashSet<MethodInfo> patches = new HashSet<MethodInfo>();
 
         private void ThenReturn(Then then)
         {
@@ -46,7 +46,7 @@ namespace nmocker
             return new Mocker(InvocationMatcher.Create(action));
         }
 
-        public static Mocker When(Type type, string method, params IArg[] args)
+        public static Mocker When(Type type, string method, params object[] args)
         {
             return new Mocker(InvocationMatcher.Create(type, method, args));
         }
@@ -82,7 +82,7 @@ namespace nmocker
 
     public class ThenValue : Then
     {
-        private object value;
+        private readonly object value;
 
         public ThenValue(object value)
         {
@@ -98,7 +98,7 @@ namespace nmocker
 
     public class ThenLambda : Then
     {
-        private Func<object[], object> then;
+        private readonly Func<object[], object> then;
 
         public ThenLambda(Func<object[], object> then)
         {
@@ -135,7 +135,7 @@ namespace nmocker
 
     public class Arg<A> : IArg
     {
-        private Predicate<object> matcher;
+        private readonly Predicate<object> matcher;
 
         public Arg(Predicate<A> matcher)
         {

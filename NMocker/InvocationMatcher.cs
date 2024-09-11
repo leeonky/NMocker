@@ -10,7 +10,7 @@ namespace nmocker
     public class InvocationMatcher
     {
         private readonly MethodInfo methodInfo;
-        private List<Predicate<object>> arguments;
+        private readonly List<Predicate<object>> arguments;
 
         public MethodInfo Method
         {
@@ -44,22 +44,33 @@ namespace nmocker
             {
                 List<Predicate<object>> arguments = new List<Predicate<object>>();
                 foreach (var argument in methodCallExpression.Arguments)
-                {
-                    arguments.Add(ToPredicate(argument));
-                }
+                    arguments.Add(CompilePredicate(argument));
                 return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action), arguments);
             }
             throw new InvalidOperationException();
         }
 
-        public static InvocationMatcher Create(Type type, string method, params IArg[] args)
+        public static InvocationMatcher Create(Type type, string method, params object[] args)
         {
             Func<MethodInfo, bool> targetMethod = m => m.IsStatic && m.Name == method
-                && m.GetParameters().Select(p => p.ParameterType).ToArray().SequenceEqual(args.Select(a => a.Type).ToArray());
-            return new InvocationMatcher(type.GetDeclaredMethods().First(targetMethod), args.Select(a => a.Predicate).ToList());
+                && m.GetParameters().Select(p => p.ParameterType).ToArray().SequenceEqual(args.Select(a => GuessType(a)).ToArray());
+            return new InvocationMatcher(type.GetDeclaredMethods().First(targetMethod), args.Select(a => GuessPredicate(a)).ToList());
         }
 
-        private static Predicate<object> ToPredicate(Expression argument)
+        private static Type GuessType(object arg)
+        {
+            if (arg is IArg iArg)
+                return iArg.Type;
+            return arg.GetType();
+        }
+        private static Predicate<object> GuessPredicate(object arg)
+        {
+            if (arg is IArg iArg)
+                return iArg.Predicate;
+            return actual => object.Equals(actual, arg);
+        }
+
+        private static Predicate<object> CompilePredicate(Expression argument)
         {
             if (argument is ConstantExpression)
                 return actual => Object.Equals(actual, ((ConstantExpression)argument).Value);

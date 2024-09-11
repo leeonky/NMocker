@@ -105,5 +105,24 @@ All invocations:
 --->static Target::method1(Int32<2>)
 Expected to call 1 times, but actually call 2 times.", exception.Message);
         }
+
+        [TestMethod]
+        public void raise_error_with_no_calls()
+        {
+            Mocker.When(() => Target.method1(Arg<int>.Any())).ThenReturn(5);
+
+            Target.method1(2);
+
+            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
+            {
+                stackFrame = new StackTrace(true).GetFrame(0);
+                Verifier.NoCalls(() => Target.method1(2));
+            });
+
+            Assert.AreEqual(string.Format("Unsatisfied invocation verification at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1) + @"
+All invocations:
+--->static Target::method1(Int32<2>)
+Expected no call, but actually call 1 times.", exception.Message);
+        }
     }
 }
