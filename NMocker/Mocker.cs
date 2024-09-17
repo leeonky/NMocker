@@ -37,8 +37,11 @@ namespace nmocker
             Invocation invocation = Invocation.ActualCall(__originalMethod, null, __args);
             Mocker mocker = mockers.LastOrDefault(m => m.invocationMatcher.Matches(invocation));
             if (mocker != null)
+            {
+                mocker.invocationMatcher.ProcessRefAndOutArgs(__args);
                 return mocker.then.DoThen(__args, ref __result);
-            return false;
+            }
+            return true;
         }
 
         public static Mocker When(Expression<Action> action)
@@ -66,6 +69,11 @@ namespace nmocker
             ThenReturn(new ThenActual());
         }
 
+        public void ThenDefault()
+        {
+            ThenReturn(new Then());
+        }
+
         public static void Clear()
         {
             harmony.UnpatchAll();
@@ -75,9 +83,12 @@ namespace nmocker
         }
     }
 
-    public abstract class Then
+    public class Then
     {
-        public abstract bool DoThen(object[] args, ref object result);
+        public virtual bool DoThen(object[] args, ref object result)
+        {
+            return false;
+        }
     }
 
     public class ThenValue : Then
@@ -131,12 +142,16 @@ namespace nmocker
         {
             get;
         }
+
+        void processRef(ref object arg);
     }
 
     public class ArgMatcher<A> : IArgMatcher
     {
         private readonly Predicate<object> matcher;
         private PassBy passBy = PassBy.Value;
+        private bool needUpdateRef = false;
+        private A refValue = default(A);
 
         public ArgMatcher(Predicate<A> matcher)
         {
@@ -167,11 +182,26 @@ namespace nmocker
             }
         }
 
+        public void processRef(ref object arg)
+        {
+            if (needUpdateRef)
+                arg = refValue;
+        }
+
         public ArgMatcher<A> Ref()
         {
             passBy = PassBy.Ref;
             return this;
         }
+
+        public ArgMatcher<A> Ref(A value)
+        {
+            passBy = PassBy.Ref;
+            needUpdateRef = true;
+            this.refValue = value;
+            return this;
+        }
+
         enum PassBy
         {
             Value, Ref
