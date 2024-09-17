@@ -50,7 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MockStatic.cs" />
-    <Compile Include="StubStatic.cs" />
+    <Compile Include="StubPrivetStaticMethod.cs" />
+    <Compile Include="StubPublicStaticMethod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

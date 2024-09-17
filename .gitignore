@@ -90,3 +90,5 @@ bower_components/
 # Exclude Visual Studio Code files
 .vscode/
 
+
+.cr/
