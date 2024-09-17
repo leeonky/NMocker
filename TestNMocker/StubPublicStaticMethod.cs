@@ -140,9 +140,18 @@ namespace TestNMocker
         }
 
         [TestMethod]
+        public void support_arg_is_match()
+        {
+            Mocker.When(() => Target.method(Arg.Is(1))).ThenReturn(5);
+
+            Assert.AreEqual(5, Target.method(1));
+            Assert.AreEqual(0, Target.method(2));
+        }
+
+        [TestMethod]
         public void support_arg_any_match()
         {
-            Mocker.When(() => Target.method(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenReturn(5);
 
             Assert.AreEqual(5, Target.method(1));
             Assert.AreEqual(5, Target.method(2));
@@ -151,7 +160,7 @@ namespace TestNMocker
         [TestMethod]
         public void support_customer_arg_match()
         {
-            Mocker.When(() => Target.method(Arg<int>.That(i => i > 5))).ThenReturn(5);
+            Mocker.When(() => Target.method(Arg.That<int>(i => i > 5))).ThenReturn(5);
 
             Assert.AreEqual(0, Target.method(4));
             Assert.AreEqual(0, Target.method(5));
@@ -161,7 +170,7 @@ namespace TestNMocker
         [TestMethod]
         public void later_matched_stub_will_overwrite_the_earlier()
         {
-            Mocker.When(() => Target.method(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenReturn(5);
             Mocker.When(() => Target.method(1)).ThenReturn(10);
 
             Assert.AreEqual(5, Target.method(2));
@@ -171,7 +180,7 @@ namespace TestNMocker
         [TestMethod]
         public void use_passed_args_in_lambda()
         {
-            Mocker.When(() => Target.method(Arg<int>.Any())).Then(args => ((int)args[0]) + 1);
+            Mocker.When(() => Target.method(Arg.Any<int>())).Then(args => ((int)args[0]) + 1);
 
             Assert.AreEqual(2, Target.method(1));
             Assert.AreEqual(3, Target.method(2));
@@ -180,7 +189,7 @@ namespace TestNMocker
         [TestMethod]
         public void args_can_passed_to_original_method_when_call_actual()
         {
-            Mocker.When(() => Target.methodArg(Arg<int>.Any())).ThenCallActual();
+            Mocker.When(() => Target.methodArg(Arg.Any<int>())).ThenCallActual();
 
             Assert.AreEqual(1, Target.methodArg(1));
             Assert.AreEqual(2, Target.methodArg(2));

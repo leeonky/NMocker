@@ -120,7 +120,7 @@ namespace nmocker
         }
     }
 
-    public interface IArg
+    public interface IArgMatcher
     {
         Predicate<object> Predicate
         {
@@ -133,26 +133,16 @@ namespace nmocker
         }
     }
 
-    public class Arg<A> : IArg
+    public class ArgMatcher<A> : IArgMatcher
     {
         private readonly Predicate<object> matcher;
 
-        public Arg(Predicate<A> matcher)
+        public ArgMatcher(Predicate<A> matcher)
         {
             this.matcher = actual => matcher.Invoke((A)actual);
         }
 
-        public static Arg<A> Any()
-        {
-            return That(a => true);
-        }
-
-        public static Arg<A> That(Predicate<A> matcher)
-        {
-            return new Arg<A>(matcher);
-        }
-
-        public static implicit operator A(Arg<A> arg)
+        public static implicit operator A(ArgMatcher<A> arg)
         {
             return default(A);
         }
@@ -168,6 +158,26 @@ namespace nmocker
         public Type Type
         {
             get { return typeof(A); }
+        }
+    }
+
+
+    public class Arg
+    {
+        public static ArgMatcher<A> Any<A>()
+        {
+            return That<A>(a => true);
+        }
+
+        public static ArgMatcher<A> Is<A>(A value)
+        {
+            return That<A>(a => object.Equals(a, value));
+        }
+
+
+        public static ArgMatcher<A> That<A>(Predicate<A> matcher)
+        {
+            return new ArgMatcher<A>(matcher);
         }
     }
 }

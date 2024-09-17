@@ -59,13 +59,13 @@ namespace nmocker
 
         private static Type GuessType(object arg)
         {
-            if (arg is IArg iArg)
+            if (arg is IArgMatcher iArg)
                 return iArg.Type;
             return arg.GetType();
         }
         private static Predicate<object> GuessPredicate(object arg)
         {
-            if (arg is IArg iArg)
+            if (arg is IArgMatcher iArg)
                 return iArg.Predicate;
             return actual => object.Equals(actual, arg);
         }
@@ -74,16 +74,10 @@ namespace nmocker
         {
             if (argument is ConstantExpression)
                 return actual => Object.Equals(actual, ((ConstantExpression)argument).Value);
-            if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert)
-            {
-                if (unaryExpression.Operand is MethodCallExpression methodCall
-                    && methodCall.Method.DeclaringType.IsGenericType
-                    && methodCall.Method.DeclaringType.GetGenericTypeDefinition() == typeof(Arg<>))
-                {
-                    IArg a = (IArg)Expression.Lambda(methodCall).Compile().DynamicInvoke();
-                    return a.Predicate;
-                }
-            }
+            if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert
+                && unaryExpression.Operand is MethodCallExpression methodCall
+                    && methodCall.Method.DeclaringType == typeof(Arg))
+                return ((IArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Predicate;
             throw new InvalidOperationException();
         }
     }

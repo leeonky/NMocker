@@ -54,7 +54,7 @@ Expected to call 1 times, but actually call 0 times.", exception.Message);
         [TestMethod]
         public void raise_error_when_unsatisfied_verification_with_args()
         {
-            Mocker.When(() => Target.method1(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(() => Target.method1(Arg.Any<int>())).ThenReturn(5);
 
             Target.method1(1);
             Target.method1(2);
@@ -75,7 +75,7 @@ Expected to call 1 times, but actually call 0 times.", exception.Message);
         [TestMethod]
         public void verify_method_with_args()
         {
-            Mocker.When(() => Target.method1(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(() => Target.method1(Arg.Any<int>())).ThenReturn(5);
 
             Target.method1(1);
             Target.method1(2);
@@ -86,7 +86,7 @@ Expected to call 1 times, but actually call 0 times.", exception.Message);
         [TestMethod]
         public void raise_error_when_unsatisfied_verification_of_times()
         {
-            Mocker.When(() => Target.method1(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(() => Target.method1(Arg.Any<int>())).ThenReturn(5);
 
             Target.method1(1);
             Target.method1(2);
@@ -109,7 +109,7 @@ Expected to call 1 times, but actually call 2 times.", exception.Message);
         [TestMethod]
         public void raise_error_with_no_calls()
         {
-            Mocker.When(() => Target.method1(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(() => Target.method1(Arg.Any<int>())).ThenReturn(5);
 
             Target.method1(2);
 
