@@ -10,7 +10,7 @@ namespace nmocker
     public class InvocationMatcher
     {
         private readonly MethodInfo methodInfo;
-        private readonly List<IArgMatcher> argMatchers;
+        private readonly List<ArgMatcher> argMatchers;
 
         public MethodInfo Method
         {
@@ -20,10 +20,10 @@ namespace nmocker
             }
         }
 
-        public InvocationMatcher(MethodInfo methodInfo, List<IArgMatcher> argMatchers)
+        public InvocationMatcher(MethodInfo methodInfo, List<ArgMatcher> argMatchers)
         {
             this.methodInfo = methodInfo;
-            this.argMatchers = new List<IArgMatcher>(argMatchers);
+            this.argMatchers = new List<ArgMatcher>(argMatchers);
         }
 
         public bool Matches(Invocation invocation)
@@ -31,108 +31,48 @@ namespace nmocker
             if (methodInfo != invocation.Method || invocation.Arguments.Length != argMatchers.Count)
                 return false;
             for (int i = 0; i < invocation.Arguments.Length; i++)
-            {
                 if (!argMatchers[i].Predicate.Invoke(invocation.Arguments[i]))
                     return false;
-            }
             return true;
         }
 
         public static InvocationMatcher Create(Expression<Action> action)
         {
-            if (action.Body is MethodCallExpression methodCallExpression)
-                return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action), 
-                    methodCallExpression.Arguments.Select(a => CompileArgMatcher(a)).ToList());
+            if (action.Body is MethodCallExpression method)
+                return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action), method.Arguments.Select(CompileArgMatcher).ToList());
             throw new InvalidOperationException();
         }
 
-        public static InvocationMatcher Create(Type type, string method, params object[] args)
-        {
-            List<IArgMatcher> argMatchers = args.Select(a => castToMatcher(a)).ToList();
-            Func<MethodInfo, bool> targetMethod = m => m.IsStatic && m.Name == method
-                && m.GetParameters().Select(p => p.ParameterType).ToArray().SequenceEqual(argMatchers.Select(a => a.Type).ToArray());
-            return new InvocationMatcher(type.GetDeclaredMethods().First(targetMethod), argMatchers);
-        }
-        class RawTypeArgMatcher : IArgMatcher
-        {
-            private readonly Type type;
-            private readonly Predicate<object> predicate;
-
-            public RawTypeArgMatcher(Type type, Predicate<object> predicate)
-            {
-                this.type = type;
-                this.predicate = predicate;
-            }
-
-            public Predicate<object> Predicate
-            {
-                get
-                {
-                    return predicate;
-                }
-            }
-
-            public Type Type
-            {
-                get
-                {
-                    return type;
-                }
-            }
-
-            public void processRef(ref object arg)
-            {
-            }
-        }
-
-        private static IArgMatcher castToMatcher(object arg)
-        {
-            if (arg is IArgMatcher iArg)
-                return iArg;
-            return new RawTypeArgMatcher(arg.GetType(), obj=>object.Equals(obj, arg));
-        }
-
-        private static Type GuessType(object arg)
-        {
-            if (arg is IArgMatcher iArg)
-                return iArg.Type;
-            return arg.GetType();
-        }
-        private static Predicate<object> GuessPredicate(object arg)
-        {
-            if (arg is IArgMatcher iArg)
-                return iArg.Predicate;
-            return actual => object.Equals(actual, arg);
-        }
-
-        private static Predicate<object> CompilePredicate(Expression argument)
-        {
-            if (argument is ConstantExpression)
-                return actual => Object.Equals(actual, ((ConstantExpression)argument).Value);
-            if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert
-                && unaryExpression.Operand is MethodCallExpression methodCall
-                    && methodCall.Method.DeclaringType == typeof(Arg))
-                return ((IArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Predicate;
-            throw new InvalidOperationException();
-        }
-
-        private static IArgMatcher CompileArgMatcher(Expression argument)
+        private static ArgMatcher CompileArgMatcher(Expression argument)
         {
             if (argument is ConstantExpression)
                 return new RawTypeArgMatcher(argument.Type, actual => Object.Equals(actual, ((ConstantExpression)argument).Value));
             if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert
                 && unaryExpression.Operand is MethodCallExpression methodCall
                     && methodCall.Method.DeclaringType == typeof(Arg))
-                return new RawTypeArgMatcher(argument.Type, ((IArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Predicate);
+                return new RawTypeArgMatcher(argument.Type, ((ArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Predicate);
             throw new InvalidOperationException();
+        }
+
+        public static InvocationMatcher Create(Type type, string methodName, params object[] args)
+        {
+            List<ArgMatcher> argMatchers = args.Select(CastToMatcher).ToList();
+            MethodInfo method = type.GetDeclaredMethods().First(m => m.IsStatic && m.Name == methodName
+                && m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argMatchers.Select(a => a.Type)));
+            return new InvocationMatcher(method, argMatchers);
+        }
+
+        private static ArgMatcher CastToMatcher(object arg)
+        {
+            if (arg is ArgMatcher)
+                return (ArgMatcher)arg;
+            return new RawTypeArgMatcher(arg.GetType(), obj=>object.Equals(obj, arg));
         }
 
         public void ProcessRefAndOutArgs(object[] args)
         {
-            for(int index = 0; index < args.Length; index++)
-            {
+            for (int index = 0; index < args.Length; index++)
                 argMatchers[index].processRef(ref args[index]);
-            }
         }
     }
 }

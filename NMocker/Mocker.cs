@@ -131,7 +131,7 @@ namespace nmocker
         }
     }
 
-    public interface IArgMatcher
+    public interface ArgMatcher
     {
         Predicate<object> Predicate
         {
@@ -146,19 +146,51 @@ namespace nmocker
         void processRef(ref object arg);
     }
 
-    public class ArgMatcher<A> : IArgMatcher
+    public class RawTypeArgMatcher : ArgMatcher
+    {
+        private readonly Type type;
+        private readonly Predicate<object> predicate;
+
+        public RawTypeArgMatcher(Type type, Predicate<object> predicate)
+        {
+            this.type = type;
+            this.predicate = predicate;
+        }
+
+        public Predicate<object> Predicate
+        {
+            get
+            {
+                return predicate;
+            }
+        }
+
+        public Type Type
+        {
+            get
+            {
+                return type;
+            }
+        }
+
+        public void processRef(ref object arg)
+        {
+        }
+    }
+
+    public class GenericArgMatcher<A> : ArgMatcher
     {
         private readonly Predicate<object> matcher;
         private PassBy passBy = PassBy.Value;
         private bool needUpdateRef = false;
         private A refValue = default(A);
 
-        public ArgMatcher(Predicate<A> matcher)
+        public GenericArgMatcher(Predicate<A> matcher)
         {
             this.matcher = actual => matcher.Invoke((A)actual);
         }
 
-        public static implicit operator A(ArgMatcher<A> arg)
+        public static implicit operator A(GenericArgMatcher<A> arg)
         {
             return default(A);
         }
@@ -188,13 +220,13 @@ namespace nmocker
                 arg = refValue;
         }
 
-        public ArgMatcher<A> Ref()
+        public GenericArgMatcher<A> Ref()
         {
             passBy = PassBy.Ref;
             return this;
         }
 
-        public ArgMatcher<A> Ref(A value)
+        public GenericArgMatcher<A> Ref(A value)
         {
             passBy = PassBy.Ref;
             needUpdateRef = true;
@@ -210,22 +242,22 @@ namespace nmocker
 
     public class Arg
     {
-        public static ArgMatcher<A> Any<A>()
+        public static GenericArgMatcher<A> Any<A>()
         {
             return That<A>(a => true);
         }
 
-        public static ArgMatcher<A> Is<A>(A value)
+        public static GenericArgMatcher<A> Is<A>(A value)
         {
             return That<A>(a => object.Equals(a, value));
         }
 
-        public static ArgMatcher<A> That<A>(Predicate<A> matcher)
+        public static GenericArgMatcher<A> That<A>(Predicate<A> matcher)
         {
-            return new ArgMatcher<A>(matcher);
+            return new GenericArgMatcher<A>(matcher);
         }
 
-        public static ArgMatcher<A> Out<A>()
+        public static GenericArgMatcher<A> Out<A>()
         {
             return Any<A>().Ref();
         }
