@@ -1,8 +1,8 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace nmocker
@@ -136,6 +136,7 @@ namespace nmocker
     public class ArgMatcher<A> : IArgMatcher
     {
         private readonly Predicate<object> matcher;
+        private PassBy passBy = PassBy.Value;
 
         public ArgMatcher(Predicate<A> matcher)
         {
@@ -157,10 +158,25 @@ namespace nmocker
 
         public Type Type
         {
-            get { return typeof(A); }
+            get
+            {
+                Type type = typeof(A);
+                if (passBy == PassBy.Ref)
+                    return type.MakeByRefType();
+                return type;
+            }
+        }
+
+        public ArgMatcher<A> Ref()
+        {
+            passBy = PassBy.Ref;
+            return this;
+        }
+        enum PassBy
+        {
+            Value, Ref
         }
     }
-
 
     public class Arg
     {
@@ -174,10 +190,14 @@ namespace nmocker
             return That<A>(a => object.Equals(a, value));
         }
 
-
         public static ArgMatcher<A> That<A>(Predicate<A> matcher)
         {
             return new ArgMatcher<A>(matcher);
+        }
+
+        public static ArgMatcher<A> Out<A>()
+        {
+            return Any<A>().Ref();
         }
     }
 }

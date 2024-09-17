@@ -204,13 +204,8 @@ namespace TestNMocker
         {
             public static int method(ref int i)
             {
-                i = 1000;
+                i += 100;
                 return 100;
-            }
-            public static int method(ref string s)
-            {
-                s = "ref";
-                return 200;
             }
         }
 
@@ -220,53 +215,114 @@ namespace TestNMocker
             Mocker.Clear();
         }
 
-        /*
+        [TestMethod]
+        public void support_arg_is_match()
+        {
+            Mocker.When(typeof(Target), "method", Arg.Is(1).Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, Target.method(ref i));
+        }
+
         [TestMethod]
         public void support_arg_any_match()
         {
-            Mocker.When(() => Target.method(Arg<int>.Any())).ThenReturn(5);
+            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).ThenReturn(5);
 
-            Assert.AreEqual(5, Target.method(1));
-            Assert.AreEqual(5, Target.method(2));
+            int i = 1;
+            Assert.AreEqual(5, Target.method(ref i));
         }
 
         [TestMethod]
         public void support_customer_arg_match()
         {
-            Mocker.When(() => Target.method(Arg<int>.That(i => i > 5))).ThenReturn(5);
+            Mocker.When(typeof(Target), "method", Arg.That<int>(i => i > 5).Ref()).ThenReturn(5);
 
-            Assert.AreEqual(0, Target.method(4));
-            Assert.AreEqual(0, Target.method(5));
-            Assert.AreEqual(5, Target.method(6));
+            int v = 6;
+            Assert.AreEqual(5, Target.method(ref v));
         }
 
         [TestMethod]
-        public void later_matched_stub_will_overwrite_the_earlier()
+        public void can_assign_ref_value_in_lambda()
         {
-            Mocker.When(() => Target.method(Arg<int>.Any())).ThenReturn(5);
-            Mocker.When(() => Target.method(1)).ThenReturn(10);
+            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).Then(args => args[0] = 999);
 
-            Assert.AreEqual(5, Target.method(2));
-            Assert.AreEqual(10, Target.method(1));
+            int i = 1;
+            Target.method(ref i);
+            Assert.AreEqual(999, i);
         }
 
         [TestMethod]
-        public void use_passed_args_in_lambda()
+        public void can_assign_ref_value_in_actual_call()
         {
-            Mocker.When(() => Target.method(Arg<int>.Any())).Then(args => ((int)args[0]) + 1);
+            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).ThenCallActual();
 
-            Assert.AreEqual(2, Target.method(1));
-            Assert.AreEqual(3, Target.method(2));
+            int v = 6;
+            Assert.AreEqual(100, Target.method(ref v));
+            Assert.AreEqual(106, v);
+        }
+    }
+
+    [TestClass]
+    public class StubPublicMethodByOutArg
+    {
+        public class Target
+        {
+            public static int method(out int i)
+            {
+                i = 1000;
+                return 100;
+            }
+        }
+
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
         }
 
         [TestMethod]
-        public void args_can_passed_to_original_method_when_call_actual()
+        public void support_out_arg_by_lambda()
         {
-            Mocker.When(() => Target.methodArg(Arg<int>.Any())).ThenCallActual();
+            Mocker.When(typeof(Target), "method", Arg.Out<int>()).Then(args =>
+            {
+                args[0] = 1000;
+                return 999;
+            });
 
-            Assert.AreEqual(1, Target.methodArg(1));
-            Assert.AreEqual(2, Target.methodArg(2));
-            Assert.AreEqual(10, Target.methodArg(10));
+            int i;
+            Assert.AreEqual(999, Target.method(out i));
+            Assert.AreEqual(1000, i);
+        }
+
+        /*
+
+        [TestMethod]
+        public void support_arg_any_match()
+        {
+            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, Target.method(ref i));
+        }
+
+        [TestMethod]
+        public void support_customer_arg_match()
+        {
+            Mocker.When(typeof(Target), "method", Arg.That<int>(i => i > 5).Ref()).ThenReturn(5);
+
+            int v = 6;
+            Assert.AreEqual(5, Target.method(ref v));
+        }
+
+        [TestMethod]
+        public void can_assign_ref_value_in_lambda()
+        {
+            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).Then(args => args[0] = 999);
+
+            int i = 1;
+            Target.method(ref i);
+            Assert.AreEqual(999, i);
         }
         */
     }
