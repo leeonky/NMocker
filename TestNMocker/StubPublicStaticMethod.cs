@@ -271,7 +271,6 @@ namespace TestNMocker
             Assert.AreEqual(200, i);
         }
 
-
         [TestMethod]
         public void can_assign_ref_value_in_actual_call()
         {
@@ -325,7 +324,6 @@ namespace TestNMocker
             Assert.AreEqual(1000, i);
         }
 
-        /*
         [TestMethod]
         public void support_out_arg_directly()
         {
@@ -336,35 +334,5 @@ namespace TestNMocker
 
             Assert.AreEqual(1000, i);
         }
-
-
-        [TestMethod]
-        public void support_arg_any_match()
-        {
-            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).ThenReturn(5);
-
-            int i = 1;
-            Assert.AreEqual(5, Target.method(ref i));
-        }
-
-        [TestMethod]
-        public void support_customer_arg_match()
-        {
-            Mocker.When(typeof(Target), "method", Arg.That<int>(i => i > 5).Ref()).ThenReturn(5);
-
-            int v = 6;
-            Assert.AreEqual(5, Target.method(ref v));
-        }
-
-        [TestMethod]
-        public void can_assign_ref_value_in_lambda()
-        {
-            Mocker.When(typeof(Target), "method", Arg.Any<int>().Ref()).Then(args => args[0] = 999);
-
-            int i = 1;
-            Target.method(ref i);
-            Assert.AreEqual(999, i);
-        }
-        */
     }
 }

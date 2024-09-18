@@ -247,5 +247,10 @@ namespace nmocker
         {
             return Any<A>().Ref();
         }
+
+        public static GenericArgMatcher<A> Out<A>(A value)
+        {
+            return Any<A>().Ref(value);
+        }
     }
 }
