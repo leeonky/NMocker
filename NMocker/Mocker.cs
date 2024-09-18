@@ -131,19 +131,15 @@ namespace nmocker
         }
     }
 
-    public interface ArgMatcher
+    public abstract class ArgMatcher
     {
-        Predicate<object> Predicate
+        public abstract Type Type();
+
+        public virtual void ProcessRef(ref object arg)
         {
-            get;
         }
 
-        Type Type
-        {
-            get;
-        }
-
-        void processRef(ref object arg);
+        public abstract bool Matches(object arg);
     }
 
     public class RawTypeArgMatcher : ArgMatcher
@@ -157,86 +153,76 @@ namespace nmocker
             this.predicate = predicate;
         }
 
-        public Predicate<object> Predicate
+        public override bool Matches(object arg)
         {
-            get
-            {
-                return predicate;
-            }
+            return predicate.Invoke(arg);
         }
 
-        public Type Type
+        public override Type Type()
         {
-            get
-            {
-                return type;
-            }
-        }
-
-        public void processRef(ref object arg)
-        {
+            return type;
         }
     }
 
     public class GenericArgMatcher<A> : ArgMatcher
     {
-        private readonly Predicate<object> matcher;
-        private PassBy passBy = PassBy.Value;
-        private bool needUpdateRef = false;
-        private A refValue = default(A);
+        private readonly Predicate<A> matcher;
 
         public GenericArgMatcher(Predicate<A> matcher)
         {
-            this.matcher = actual => matcher.Invoke((A)actual);
+            this.matcher = matcher;
         }
 
-        public static implicit operator A(GenericArgMatcher<A> arg)
+        public static implicit operator A(GenericArgMatcher<A> _)
         {
             return default(A);
         }
 
-        public Predicate<object> Predicate
+        public override bool Matches(object arg)
         {
-            get
-            {
-                return matcher;
-            }
+            return matcher.Invoke((A)arg);
         }
 
-        public Type Type
+        public override Type Type()
         {
-            get
-            {
-                Type type = typeof(A);
-                if (passBy == PassBy.Ref)
-                    return type.MakeByRefType();
-                return type;
-            }
+            return typeof(A);
         }
 
-        public void processRef(ref object arg)
+        public RefArgMatcher<A> Ref()
         {
-            if (needUpdateRef)
-                arg = refValue;
-        }
-
-        public GenericArgMatcher<A> Ref()
-        {
-            passBy = PassBy.Ref;
-            return this;
+            return new RefArgMatcher<A>(matcher);
         }
 
         public GenericArgMatcher<A> Ref(A value)
         {
-            passBy = PassBy.Ref;
-            needUpdateRef = true;
-            this.refValue = value;
-            return this;
+            return new RefWithValueArgMatcher<A>(matcher, value);
+        }
+    }
+
+    public class RefArgMatcher<A> : GenericArgMatcher<A>
+    {
+        public RefArgMatcher(Predicate<A> matcher) : base(matcher)
+        {
         }
 
-        enum PassBy
+        public override Type Type()
         {
-            Value, Ref
+            return base.Type().MakeByRefType();
+        }
+    }
+
+    public class RefWithValueArgMatcher<A> : RefArgMatcher<A>
+    {
+        private readonly A value;
+
+        public RefWithValueArgMatcher(Predicate<A> matcher, A value) : base(matcher)
+        {
+            this.value = value;
+        }
+
+        public override void ProcessRef(ref object arg)
+        {
+            arg = value;
         }
     }
 

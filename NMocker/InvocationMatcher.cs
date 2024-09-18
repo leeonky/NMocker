@@ -20,7 +20,7 @@ namespace nmocker
             }
         }
 
-        public InvocationMatcher(MethodInfo methodInfo, List<ArgMatcher> argMatchers)
+        public InvocationMatcher(MethodInfo methodInfo, IEnumerable<ArgMatcher> argMatchers)
         {
             this.methodInfo = methodInfo;
             this.argMatchers = new List<ArgMatcher>(argMatchers);
@@ -31,7 +31,7 @@ namespace nmocker
             if (methodInfo != invocation.Method || invocation.Arguments.Length != argMatchers.Count)
                 return false;
             for (int i = 0; i < invocation.Arguments.Length; i++)
-                if (!argMatchers[i].Predicate.Invoke(invocation.Arguments[i]))
+                if (!argMatchers[i].Matches(invocation.Arguments[i]))
                     return false;
             return true;
         }
@@ -39,7 +39,7 @@ namespace nmocker
         public static InvocationMatcher Create(Expression<Action> action)
         {
             if (action.Body is MethodCallExpression method)
-                return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action), method.Arguments.Select(CompileArgMatcher).ToList());
+                return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action), method.Arguments.Select(CompileArgMatcher));
             throw new InvalidOperationException();
         }
 
@@ -48,31 +48,29 @@ namespace nmocker
             if (argument is ConstantExpression)
                 return new RawTypeArgMatcher(argument.Type, actual => Object.Equals(actual, ((ConstantExpression)argument).Value));
             if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert
-                && unaryExpression.Operand is MethodCallExpression methodCall
-                    && methodCall.Method.DeclaringType == typeof(Arg))
-                return new RawTypeArgMatcher(argument.Type, ((ArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Predicate);
+                && unaryExpression.Operand is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(Arg))
+                return new RawTypeArgMatcher(argument.Type, ((ArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Matches);
             throw new InvalidOperationException();
         }
 
         public static InvocationMatcher Create(Type type, string methodName, params object[] args)
         {
-            List<ArgMatcher> argMatchers = args.Select(CastToMatcher).ToList();
+            IEnumerable<ArgMatcher> argMatchers = args.Select(CastToMatcher);
             MethodInfo method = type.GetDeclaredMethods().First(m => m.IsStatic && m.Name == methodName
-                && m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argMatchers.Select(a => a.Type)));
+                && m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argMatchers.Select(a => a.Type())));
             return new InvocationMatcher(method, argMatchers);
         }
 
         private static ArgMatcher CastToMatcher(object arg)
         {
-            if (arg is ArgMatcher)
-                return (ArgMatcher)arg;
-            return new RawTypeArgMatcher(arg.GetType(), obj=>object.Equals(obj, arg));
+            return arg is ArgMatcher matcher ? matcher
+                : new RawTypeArgMatcher(arg.GetType(), obj => object.Equals(obj, arg));
         }
 
         public void ProcessRefAndOutArgs(object[] args)
         {
             for (int index = 0; index < args.Length; index++)
-                argMatchers[index].processRef(ref args[index]);
+                argMatchers[index].ProcessRef(ref args[index]);
         }
     }
 }
