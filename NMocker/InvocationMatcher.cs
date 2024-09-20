@@ -12,18 +12,22 @@ namespace nmocker
         private readonly MethodInfo methodInfo;
         private readonly List<ArgMatcher> argMatchers;
 
-        public MethodInfo Method
+        public InvocationMatcher(Expression<Action> action)
         {
-            get
+            if (action.Body is MethodCallExpression method)
             {
-                return methodInfo;
+                methodInfo = SymbolExtensions.GetMethodInfo(action);
+                argMatchers = method.Arguments.Select(CompileArgMatcher).ToList();
+                return;
             }
+            throw new InvalidOperationException();
         }
 
-        public InvocationMatcher(MethodInfo methodInfo, IEnumerable<ArgMatcher> argMatchers)
+        public InvocationMatcher(Type type, string methodName, object[] args)
         {
-            this.methodInfo = methodInfo;
-            this.argMatchers = new List<ArgMatcher>(argMatchers);
+            argMatchers = args.Select(CastToMatcher).ToList();
+            methodInfo = type.GetDeclaredMethods().First(m => m.IsStatic && m.Name == methodName
+                && m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argMatchers.Select(a => a.Type())));
         }
 
         public bool Matches(Invocation invocation)
@@ -36,13 +40,6 @@ namespace nmocker
             return true;
         }
 
-        public static InvocationMatcher Create(Expression<Action> action)
-        {
-            if (action.Body is MethodCallExpression method)
-                return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action), method.Arguments.Select(CompileArgMatcher));
-            throw new InvalidOperationException();
-        }
-
         private static ArgMatcher CompileArgMatcher(Expression argument)
         {
             if (argument is ConstantExpression)
@@ -51,14 +48,6 @@ namespace nmocker
                 && unaryExpression.Operand is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(Arg))
                 return new RawTypeArgMatcher(argument.Type, ((ArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Matches);
             throw new InvalidOperationException();
-        }
-
-        public static InvocationMatcher Create(Type type, string methodName, params object[] args)
-        {
-            IEnumerable<ArgMatcher> argMatchers = args.Select(CastToMatcher);
-            MethodInfo method = type.GetDeclaredMethods().First(m => m.IsStatic && m.Name == methodName
-                && m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argMatchers.Select(a => a.Type())));
-            return new InvocationMatcher(method, argMatchers);
         }
 
         private static ArgMatcher CastToMatcher(object arg)
@@ -71,6 +60,24 @@ namespace nmocker
         {
             for (int index = 0; index < args.Length; index++)
                 argMatchers[index].ProcessRef(ref args[index]);
+        }
+
+        private readonly static Harmony harmony = new Harmony("Mocker");
+        private readonly static HashSet<MethodInfo> patches = new HashSet<MethodInfo>();
+
+        public static void Clear()
+        {
+            harmony.UnpatchAll();
+            patches.Clear();
+        }
+
+        public void PatchMethod(HarmonyMethod prefix)
+        {
+            if (!patches.Contains(methodInfo))
+            {
+                harmony.Patch(methodInfo, prefix);
+                patches.Add(methodInfo);
+            }
         }
     }
 }

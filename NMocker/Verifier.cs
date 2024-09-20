@@ -23,12 +23,12 @@ namespace nmocker
 
         public static void NCalls(int times, Expression<Action> calling)
         {
-            new Verifier(times, InvocationMatcher.Create(calling)).Verify();
+            new Verifier(times, new InvocationMatcher(calling)).Verify();
         }
 
         public static void NoCalls(Expression<Action> calling)
         {
-            new Verifier(0, InvocationMatcher.Create(calling)).Verify();
+            new Verifier(0, new InvocationMatcher(calling)).Verify();
         }
 
         private void Verify()

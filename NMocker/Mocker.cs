@@ -17,17 +17,11 @@ namespace nmocker
             this.invocationMatcher = invocationMatcher;
         }
 
-        private readonly static Harmony harmony = new Harmony("Mocker");
         private readonly static List<Mocker> mockers = new List<Mocker>();
-        private readonly static HashSet<MethodInfo> patches = new HashSet<MethodInfo>();
 
         private void ThenReturn(Then then)
         {
-            if (!patches.Contains(invocationMatcher.Method))
-            {
-                harmony.Patch(invocationMatcher.Method, new HarmonyMethod(GetType().GetMethod("ReturnPrefix")));
-                patches.Add(invocationMatcher.Method);
-            }
+            invocationMatcher.PatchMethod(new HarmonyMethod(GetType().GetMethod("ReturnPrefix")));
             mockers.Add(this);
             this.then = then;
         }
@@ -46,12 +40,12 @@ namespace nmocker
 
         public static Mocker When(Expression<Action> action)
         {
-            return new Mocker(InvocationMatcher.Create(action));
+            return new Mocker(new InvocationMatcher(action));
         }
 
         public static Mocker When(Type type, string method, params object[] args)
         {
-            return new Mocker(InvocationMatcher.Create(type, method, args));
+            return new Mocker(new InvocationMatcher(type, method, args));
         }
 
         public void ThenReturn(object value)
@@ -76,9 +70,8 @@ namespace nmocker
 
         public static void Clear()
         {
-            harmony.UnpatchAll();
             mockers.Clear();
-            patches.Clear();
+            InvocationMatcher.Clear();
             Invocation.Clear();
         }
     }
