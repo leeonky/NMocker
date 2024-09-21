@@ -27,7 +27,6 @@ namespace TestNMocker
             }
         }
 
-
         [TestInitialize]
         public void setup()
         {

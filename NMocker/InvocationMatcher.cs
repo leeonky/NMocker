@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 
 namespace nmocker
 {
@@ -26,8 +27,32 @@ namespace nmocker
         public InvocationMatcher(Type type, string methodName, object[] args)
         {
             argMatchers = args.Select(CastToMatcher).ToList();
-            methodInfo = type.GetDeclaredMethods().First(m => m.IsStatic && m.Name == methodName
-                && m.GetParameters().Select(p => p.ParameterType).SequenceEqual(argMatchers.Select(a => a.Type())));
+            List<MethodInfo> methods = type.GetDeclaredMethods().FindAll(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m));
+            if(!methods.Any())
+                throw new ArgumentException("No matching method found");
+            if (methods.Count > 1)
+            {
+                StringBuilder builder = new StringBuilder("Ambiguous method between the following:");
+                foreach (MethodInfo method in methods)
+                    builder.Append("\n    ").Append(method.DeclaringType.Name).Append("::").Append(method.Name).Append('(')
+                        .Append(string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name).ToArray()))
+                        .Append(')');
+                throw new ArgumentException(builder.ToString());
+            }
+            methodInfo = methods[0];
+        }
+
+        private bool ArgTypesMatched(MethodInfo m)
+        {
+            ParameterInfo[] parameters = m.GetParameters();
+            if (parameters.Length == argMatchers.Count)
+            {
+                for (int i = 0; i < parameters.Length; i++)
+                    if (!argMatchers[i].TypeMatches(parameters[i].ParameterType))
+                        return false;
+                return true;
+            }
+            return false;
         }
 
         public bool Matches(Invocation invocation)
@@ -52,8 +77,7 @@ namespace nmocker
 
         private static ArgMatcher CastToMatcher(object arg)
         {
-            return arg is ArgMatcher matcher ? matcher
-                : new RawTypeArgMatcher(arg.GetType(), obj => object.Equals(obj, arg));
+            return arg is ArgMatcher matcher ? matcher : new RawValueArgMatcher(arg);
         }
 
         public void ProcessRefAndOutArgs(object[] args)

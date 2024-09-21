@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using nmocker;
+using System;
 
 namespace TestNMocker
 {
@@ -266,7 +267,7 @@ namespace TestNMocker
         {
             Mocker.When(typeof(Target), "method", Arg.Is(1).Ref()).Then(args => args[0] = 999);
 
-            int i  = 100;
+            int i = 100;
             Target.method(ref i);
             Assert.AreEqual(200, i);
         }
@@ -333,6 +334,94 @@ namespace TestNMocker
             Target.method(out i);
 
             Assert.AreEqual(1000, i);
+        }
+    }
+
+    [TestClass]
+    public class StubWithTypeAndMethodName
+    {
+        public class Target
+        {
+            public static int method(string msg)
+            {
+                return 100;
+            }
+
+            public static int method2(string msg)
+            {
+                return 100;
+            }
+
+            public static int method2(object obj)
+            {
+                return 100;
+            }
+
+            public static int method3(int i)
+            {
+                return 100;
+            }
+
+            public static int method3(object obj)
+            {
+                return 100;
+            }
+
+            public static int method4(int? i)
+            {
+                return 100;
+            }
+        }
+
+        [TestMethod]
+        public void can_use_const_null_arg_value_in_non_primitive_parameter()
+        {
+            Mocker.When(typeof(Target), "method", null).ThenReturn(1);
+
+            Assert.AreEqual(1, Target.method(null));
+            Assert.AreEqual(100, Target.method("xxx"));
+        }
+
+        [TestMethod]
+        public void raise_error_when_more_than_one_matched_methods()
+        {
+            ArgumentException exception = Assert.ThrowsException<ArgumentException>(() =>
+            {
+                Mocker.When(typeof(Target), "method2", null).ThenReturn(1);
+            });
+
+            Assert.AreEqual(@"Ambiguous method between the following:
+    Target::method2(String)
+    Target::method2(Object)", exception.Message);
+        }
+
+        [TestMethod]
+        public void null_can_distinguish_between_primitive_object_types()
+        {
+            Mocker.When(typeof(Target), "method3", null).ThenReturn(1);
+
+            Assert.AreEqual(1, Target.method3(null));
+            Assert.AreEqual(100, Target.method3(0));
+        }
+
+        [TestMethod]
+        public void null_can_distinguish_nullable()
+        {
+            Mocker.When(typeof(Target), "method4", null).ThenReturn(1);
+
+            Assert.AreEqual(1, Target.method4(null));
+            Assert.AreEqual(100, Target.method4(0));
+        }
+
+        [TestMethod]
+        public void raise_error_when_no_matching_method()
+        {
+            ArgumentException exception = Assert.ThrowsException<ArgumentException>(() =>
+            {
+                Mocker.When(typeof(Target), "method4", string.Empty).ThenReturn(1);
+            });
+
+            Assert.AreEqual("No matching method found", exception.Message);
         }
     }
 }

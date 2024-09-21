@@ -45,7 +45,7 @@ namespace nmocker
 
         public static Mocker When(Type type, string method, params object[] args)
         {
-            return new Mocker(new InvocationMatcher(type, method, args));
+            return new Mocker(new InvocationMatcher(type, method, args == null ? new object[] { null } : args));
         }
 
         public void ThenReturn(object value)
@@ -126,13 +126,13 @@ namespace nmocker
 
     public abstract class ArgMatcher
     {
-        public abstract Type Type();
-
         public virtual void ProcessRef(ref object arg)
         {
         }
 
         public abstract bool Matches(object arg);
+
+        public abstract bool TypeMatches(Type t);
     }
 
     public class RawTypeArgMatcher : ArgMatcher
@@ -151,9 +151,30 @@ namespace nmocker
             return predicate.Invoke(arg);
         }
 
-        public override Type Type()
+        public override bool TypeMatches(Type t)
         {
-            return type;
+            return t == type;
+        }
+    }
+
+    public class RawValueArgMatcher : ArgMatcher
+    {
+        private readonly object value;
+        public RawValueArgMatcher(object value)
+        {
+            this.value = value;
+        }
+
+        public override bool Matches(object arg)
+        {
+            return object.Equals(value, arg);
+        }
+
+        public override bool TypeMatches(Type t)
+        {
+            if (value == null)
+                return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
+            return t == value.GetType();
         }
     }
 
@@ -176,9 +197,14 @@ namespace nmocker
             return matcher.Invoke((A)arg);
         }
 
-        public override Type Type()
+        protected virtual Type Type()
         {
             return typeof(A);
+        }
+
+        public override bool TypeMatches(Type t)
+        {
+            return Type() == t;
         }
 
         public RefArgMatcher<A> Ref()
@@ -198,9 +224,9 @@ namespace nmocker
         {
         }
 
-        public override Type Type()
+        protected override Type Type()
         {
-            return base.Type().MakeByRefType();
+            return typeof(A).MakeByRefType();
         }
     }
 
