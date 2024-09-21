@@ -40,24 +40,15 @@ namespace NMocker
         private bool ArgTypesMatched(MethodInfo m)
         {
             ParameterInfo[] parameters = m.GetParameters();
-            if (parameters.Length == argMatchers.Count)
-            {
-                for (int i = 0; i < parameters.Length; i++)
-                    if (!argMatchers[i].TypeMatches(parameters[i].ParameterType))
-                        return false;
-                return true;
-            }
-            return false;
+            return parameters.Length == argMatchers.Count && Enumerable.Range(0, parameters.Length)
+                .All(i => argMatchers[i].TypeMatches(parameters[i].ParameterType));
         }
 
         public bool Matches(Invocation invocation)
         {
-            if (methodInfo != invocation.Method || invocation.Arguments.Length != argMatchers.Count)
-                return false;
-            for (int i = 0; i < invocation.Arguments.Length; i++)
-                if (!argMatchers[i].Matches(invocation.Arguments[i]))
-                    return false;
-            return true;
+            return methodInfo == invocation.Method && invocation.Arguments.Length == argMatchers.Count 
+                && Enumerable.Range(0, invocation.Arguments.Length)
+                .All(i => argMatchers[i].Matches(invocation.Arguments[i]));
         }
 
         private static ArgMatcher CompileArgMatcher(Expression argument)
