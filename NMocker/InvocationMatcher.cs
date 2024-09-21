@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using NMocker.Extentions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
-namespace nmocker
+namespace NMocker
 {
     public class InvocationMatcher
     {
@@ -28,17 +29,11 @@ namespace nmocker
         {
             argMatchers = args.Select(CastToMatcher).ToList();
             List<MethodInfo> methods = type.GetDeclaredMethods().FindAll(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m));
-            if(!methods.Any())
+            if (!methods.Any())
                 throw new ArgumentException("No matching method found");
             if (methods.Count > 1)
-            {
-                StringBuilder builder = new StringBuilder("Ambiguous method between the following:");
-                foreach (MethodInfo method in methods)
-                    builder.Append("\n    ").Append(method.DeclaringType.Name).Append("::").Append(method.Name).Append('(')
-                        .Append(string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name).ToArray()))
-                        .Append(')');
-                throw new ArgumentException(builder.ToString());
-            }
+                throw new ArgumentException(methods.Aggregate(new StringBuilder("Ambiguous method between the following:"),
+                    (builder, method) => builder.Append("\n    ").Append(method.Dump())).ToString());
             methodInfo = methods[0];
         }
 

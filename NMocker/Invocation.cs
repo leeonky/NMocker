@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using NMocker.Extentions;
+using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Reflection;
+using System.Text;
 
-namespace nmocker
+namespace NMocker
 {
     public class Invocation
     {
@@ -33,23 +34,12 @@ namespace nmocker
             this.args = args;
         }
 
-        public override string ToString()
+        private string Dump(InvocationMatcher invocationMatcher)
         {
-            StringBuilder builder = new StringBuilder();
-            if (method.IsStatic)
-                builder.Append("static ");
-
-            builder.Append(method.DeclaringType.Name)
-                .Append("::")
-                .Append(method.Name)
-                .Append('(')
-                .Append(string.Join(", ", method.GetParameters().Select((p, index) => p.ParameterType.Name + "<" + args[index] + ">").ToArray()))
-                .Append(')');
-
-            return builder.ToString();
+            return (invocationMatcher.Matches(this) ? "--->" : "    ") + method.Dump(args);
         }
 
-        internal static Invocation ActualCall(MethodBase method, object instance, object[] args)
+        internal static Invocation ActualCall(MethodBase method, object[] args)
         {
             Invocation invocation = new Invocation(method, null, args);
             invocations.Add(invocation);
@@ -65,21 +55,13 @@ namespace nmocker
 
         internal static int Matched(InvocationMatcher invocationMatcher)
         {
-            return Invocation.invocations.Count(i => invocationMatcher.Matches(i));
+            return invocations.Count(i => invocationMatcher.Matches(i));
         }
 
-        internal static string Dump(InvocationMatcher invocationMatcher)
+        internal static string DumpAll(InvocationMatcher invocationMatcher)
         {
-            StringBuilder message = new StringBuilder();
-            foreach (Invocation invocation in Invocation.invocations)
-            {
-                if (invocationMatcher.Matches(invocation))
-                    message.Append("--->");
-                else
-                    message.Append("    ");
-                message.Append(invocation.ToString()).Append('\n');
-            }
-            return message.ToString();
+            return invocations.Aggregate(new StringBuilder(),
+                (builder, invocation) => builder.Append(invocation.Dump(invocationMatcher)).Append('\n')).ToString();
         }
     }
 }

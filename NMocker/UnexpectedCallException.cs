@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace nmocker
+namespace NMocker
 {
     public class UnexpectedCallException : Exception
     {

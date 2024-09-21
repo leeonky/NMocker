@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using nmocker;
+using NMocker;
 
 namespace TestNMocker
 {

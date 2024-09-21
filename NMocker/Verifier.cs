@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Diagnostics;
 
-namespace nmocker
+namespace NMocker
 {
     public class Verifier
     {
@@ -39,7 +39,7 @@ namespace nmocker
                 StringBuilder message = new StringBuilder();
                 message.Append(string.Format("Unsatisfied invocation verification at {0}:{1}", file, line));
                 message.Append("\nAll invocations:\n");
-                message.Append(Invocation.Dump(invocationMatcher));
+                message.Append(Invocation.DumpAll(invocationMatcher));
                 if(times == 0)
                     message.Append(string.Format("Expected no call, but actually call {1} times.", times, matched));
                 else
