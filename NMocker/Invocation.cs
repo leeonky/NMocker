@@ -53,9 +53,9 @@ namespace NMocker
 
         internal static List<Invocation> invocations = new List<Invocation>();
 
-        internal static int Matched(InvocationMatcher invocationMatcher)
+        internal static int Matched(InvocationMatcher invocationMatcher, int position = 0)
         {
-            return invocations.Count(i => invocationMatcher.Matches(i));
+            return invocations.Skip(position).Count(i => invocationMatcher.Matches(i));
         }
 
         internal static string DumpAll(InvocationMatcher invocationMatcher)

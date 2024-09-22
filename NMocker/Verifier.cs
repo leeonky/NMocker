@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text;
@@ -49,7 +50,7 @@ namespace NMocker
     public class VerificationGroup
     {
         private Predicate<int> testTimes;
-        private Verification verification;
+        private List<Verification> verifications=new List<Verification>();
         private string expectationMessage;
 
         public VerificationGroup(string message, Predicate<int> testTimes)
@@ -60,13 +61,15 @@ namespace NMocker
 
         public VerificationGroup Call(Expression<Action> invocation, int depth = 0)
         {
-            this.verification = new Verification(new InvocationMatcher(invocation), depth);
+            this.verifications.Add( new Verification(new InvocationMatcher(invocation), depth));
             return this;
         }
 
         public void Verify()
         {
-            int matched = Invocation.Matched(verification.invocationMatcher);
+            Verification verification = verifications[0];
+
+            int matched = Invocation.Matched(verification.invocationMatcher, 0);
             if (!testTimes.Invoke(matched))
             {
                 StringBuilder message = new StringBuilder();
