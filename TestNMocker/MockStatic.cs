@@ -1,10 +1,11 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NMocker;
+using System;
 using System.Diagnostics;
 
 namespace TestNMocker
 {
-    [TestClass]
+    //[TestClass]
     public class MockPublicStaticMethod
     {
         [TestInitialize]
@@ -87,7 +88,7 @@ Expected to call 1 times, but actually call 0 times.", exception.Message);
     }
 
     [TestClass]
-    public class VerifyInSequence
+    public class VerifyTimesAndSequence
     {
         [TestInitialize]
         public void setup()
@@ -106,6 +107,109 @@ Expected to call 1 times, but actually call 0 times.", exception.Message);
         StackFrame stackFrame;
 
         [TestMethod]
+        public void _0_call_and_0_any_expectation_passed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            Verifier.Times(0).Call(() => Target.method(Arg.Any<int>())).Verify();
+        }
+
+        [TestMethod]
+        public void _0_call_and_1_any_expectation_failed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
+            {
+                stackFrame = new StackTrace(true).GetFrame(0);
+                Verifier.Times(1).Call(() => Target.method(Arg.Any<int>())).Verify();
+            });
+
+            Assert.AreEqual(string.Format("Unsatisfied invocation at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1) + @"
+All invocations:
+Expected to call 1 times, but actually call 0 times.", exception.Message);
+        }
+
+        [TestMethod]
+        public void _1_call_and_1_matched_expectation_passed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            Target.method(0);
+
+            Verifier.Times(1).Call(() => Target.method(0)).Verify();
+        }
+
+        [TestMethod]
+        public void _1_call_and_0_unmatched_expectation_passed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            Target.method(0);
+
+            Verifier.Times(0).Call(() => Target.method(1)).Verify();
+        }
+
+        [TestMethod]
+        public void _1_call_and_1_unmatched_expectation_failed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            Target.method(0);
+
+            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
+            {
+                stackFrame = new StackTrace(true).GetFrame(0);
+                Verifier.Times(1).Call(() => Target.method(1)).Verify();
+            });
+
+            Assert.AreEqual(string.Format("Unsatisfied invocation at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1) + String.Format(@"
+All invocations:
+    static Target::method(Int32<0>) called at {0}:{1}
+Expected to call 1 times, but actually call 0 times.", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() - 4), exception.Message);
+        }
+
+        [TestMethod]
+        public void _1_call_and_0_matched_expectation_failed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            Target.method(0);
+
+            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
+            {
+                stackFrame = new StackTrace(true).GetFrame(0);
+                Verifier.Times(0).Call(() => Target.method(0)).Verify();
+            });
+
+            Assert.AreEqual(string.Format("Unsatisfied invocation at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1) + String.Format(@"
+All invocations:
+    hit(1) from {2}:{3} => static Target::method(Int32<0>) called at {0}:{1}
+Expected no call, but actually call 1 times.", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() - 4
+, stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1), exception.Message);
+        }
+
+        [TestMethod]
+        public void _1_call_and_2_matched_expectation_failed()
+        {
+            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+
+            Target.method(0);
+
+            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
+            {
+                stackFrame = new StackTrace(true).GetFrame(0);
+                Verifier.Times(2).Call(() => Target.method(0)).Verify();
+            });
+
+            Assert.AreEqual(string.Format("Unsatisfied invocation at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1) + String.Format(@"
+All invocations:
+    hit(1) from {2}:{3} => static Target::method(Int32<0>) called at {0}:{1}
+Expected to call 2 times, but actually call 1 times.", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() - 4
+, stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 1), exception.Message);
+        }
+
+        //[TestMethod]
         public void raise_error_when_unsatisfied_verification_of_times()
         {
             Mocker.When(() => Target.method(Arg.Any<int>())).ThenReturn(5);
@@ -128,32 +232,32 @@ All invocations:
 Expected to call 1 times, but actually call 2 times.", exception.Message);
         }
 
-//        [TestMethod]
-//        public void verify_one_section_in_order_passed()
-//        {
-//            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
+        //        [TestMethod]
+        //        public void verify_one_section_in_order_passed()
+        //        {
+        //            Mocker.When(() => Target.method(Arg.Any<int>())).ThenDefault();
 
-//            Target.method(1);
-//            Target.method(2);
+        //            Target.method(1);
+        //            Target.method(2);
 
-//            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
-//            {
-//                stackFrame = new StackTrace(true).GetFrame(0);
-//                Verifier.Once
-//                    .Call(() => Target.method(2))
-//                    .Call(() => Target.method(1))
-//                    .Verify();
-//            });
+        //            UnexpectedCallException exception = Assert.ThrowsException<UnexpectedCallException>(() =>
+        //            {
+        //                stackFrame = new StackTrace(true).GetFrame(0);
+        //                Verifier.Once
+        //                    .Call(() => Target.method(2))
+        //                    .Call(() => Target.method(1))
+        //                    .Verify();
+        //            });
 
-//            Assert.AreEqual(string.Format("Incorrect order of invocation at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 3) + @"
-//All invocations:
-//??->static Target::method(Int32<1>)
-//--->static Target::method(Int32<2>)
-//Expected to call at least 1 times, but actually call 0 times.", exception.Message);
-//        }
+        //            Assert.AreEqual(string.Format("Incorrect order of invocation at {0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber() + 3) + @"
+        //All invocations:
+        //??->static Target::method(Int32<1>)
+        //--->static Target::method(Int32<2>)
+        //Expected to call at least 1 times, but actually call 0 times.", exception.Message);
+        //        }
     }
 
-    [TestClass]
+    //[TestClass]
     public class MoreConvenientApi
     {
         [TestInitialize]

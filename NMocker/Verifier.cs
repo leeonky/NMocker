@@ -37,6 +37,7 @@ namespace NMocker
         public readonly int line;
         public readonly string file;
         public readonly InvocationMatcher invocationMatcher;
+        public int matched = 0;
 
         public Verification(InvocationMatcher invocationMatcher, int depth)
         {
@@ -47,10 +48,24 @@ namespace NMocker
         }
     }
 
+    public class HittingInvocation
+    {
+        public readonly Invocation invocation;
+        public readonly Verification verification;
+        public readonly int hitting;
+
+        public HittingInvocation(Invocation invocation, Verification verification)
+        {
+            this.invocation = invocation;
+            this.verification = verification;
+            this.hitting = verification.matched;
+        }
+    }
+
     public class VerificationGroup
     {
         private Predicate<int> testTimes;
-        private List<Verification> verifications=new List<Verification>();
+        private List<Verification> verifications = new List<Verification>();
         private string expectationMessage;
 
         public VerificationGroup(string message, Predicate<int> testTimes)
@@ -61,24 +76,56 @@ namespace NMocker
 
         public VerificationGroup Call(Expression<Action> invocation, int depth = 0)
         {
-            this.verifications.Add( new Verification(new InvocationMatcher(invocation), depth));
+            this.verifications.Add(new Verification(new InvocationMatcher(invocation), depth));
             return this;
         }
 
         public void Verify()
         {
-            Verification verification = verifications[0];
+            Verification verification = verifications[0]; //1
 
-            int matched = Invocation.Matched(verification.invocationMatcher, 0);
-            if (!testTimes.Invoke(matched))
+            List<object> invocations = new List<object>();
+            foreach (Invocation invocation in Invocation.invocations)
+            {
+                if (verification.invocationMatcher.Matches(invocation))
+                {
+                    verification.matched++;
+                    invocations.Add(new HittingInvocation(invocation, verification));
+                }
+                else
+                    invocations.Add(invocation);
+            }
+            if (!testTimes.Invoke(verification.matched))
             {
                 StringBuilder message = new StringBuilder();
-                message.Append(string.Format("Unsatisfied invocation verification at {0}:{1}", verification.file, verification.line));
+                message.Append(string.Format("Unsatisfied invocation at {0}:{1}", verification.file, verification.line));
                 message.Append("\nAll invocations:\n");
-                message.Append(Invocation.DumpAll(verification.invocationMatcher));
-                message.Append(string.Format("Expected {0}, but actually call {1} times.", expectationMessage, matched));
+
+                foreach(object invocation in invocations)
+                {
+                    message.Append("    ");
+                    if(invocation is HittingInvocation hitting)
+                    {
+                        message.Append(string.Format("hit({3}) from {0}:{1} => {2}", hitting.verification.file, hitting.verification.line, hitting.invocation.Dump(), hitting.hitting));
+                    }else
+                    {
+                        message.Append(((Invocation)invocation).Dump());
+                    }
+                    message.Append('\n');
+                }
+                message.Append(string.Format("Expected {0}, but actually call {1} times.", expectationMessage, verification.matched));
                 throw new UnexpectedCallException(message.ToString());
             }
+            //int matched = Invocation.Matched(verification.invocationMatcher);
+            //if (!testTimes.Invoke(matched))
+            //{
+            //    StringBuilder message = new StringBuilder();
+            //    message.Append(string.Format("Unsatisfied invocation verification at {0}:{1}", verification.file, verification.line));
+            //    message.Append("\nAll invocations:\n");
+            //    message.Append(Invocation.DumpAll(verification.invocationMatcher));
+            //    message.Append(string.Format("Expected {0}, but actually call {1} times.", expectationMessage, matched));
+            //    throw new UnexpectedCallException(message.ToString());
+            //}
         }
     }
 }
