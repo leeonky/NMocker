@@ -1,10 +1,11 @@
-﻿using System.Linq;
+﻿using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
 namespace NMocker.Extentions
 {
-    public static class MethodBaseExtensions
+    public static class MethodBaseExtension
     {
         public static string Dump(this MethodBase method, object[] args)
         {
@@ -24,6 +25,14 @@ namespace NMocker.Extentions
         {
             return string.Format("{0}::{1}({2})", method.DeclaringType.Name, method.Name,
                 string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name).ToArray()));
+        }
+    }
+
+    public static class StackFrameExtension
+    {
+        public static string PositionString(this StackFrame stackFrame)
+        {
+            return string.Format("{0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber());
         }
     }
 }
