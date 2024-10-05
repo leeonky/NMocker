@@ -100,14 +100,19 @@ namespace NMocker
             public List<HandledInvocation> Verify()
             {
                 List<HandledInvocation> handeldInvocations = new List<HandledInvocation>();
-                Queue<Invocation> invocations = new Queue<Invocation>(Invocation.invocations);
+                root.HitAll(handeldInvocations, new Queue<Invocation>(Invocation.invocations), 0);
+                return handeldInvocations;
+            }
+
+            private void HitAll(List<HandledInvocation> handeldInvocations, Queue<Invocation> invocations, int v)
+            {
                 if (invocations.Any())
                 {
                     Invocation invocation = invocations.Dequeue();
-                    if(!root.HitCurrentOrNextGroup(handeldInvocations, invocation, invocations))
+                    if (!HitCurrentOrNextGroup(handeldInvocations, invocation, invocations, v))
                         handeldInvocations.Add(new HandledInvocation(invocation));
+                    next?.HitAll(handeldInvocations, invocations, 0);
                 }
-                return handeldInvocations;
             }
 
             private bool Hit(Verification verification, Invocation invocation, List<HandledInvocation> handeldInvocations)
@@ -120,41 +125,20 @@ namespace NMocker
                 return false;
             }
 
-            private bool HitCurrentOrNextGroup(List<HandledInvocation> handeldInvocations, Invocation invocation, Queue<Invocation> invocations)
+            private bool HitCurrentOrNextGroup(List<HandledInvocation> handeldInvocations, Invocation invocation, Queue<Invocation> invocations, int v)
             {
-                Verification verification = verifications[0];
-                if (Hit(verification, invocation, handeldInvocations))
+                if (verifications.Count > v && Hit(verifications[v++], invocation, handeldInvocations))
                 {
-                    if (verifications.Count > 1)
-                    {
-                        if (invocations.Any())
-                        {
-                            if (Hit(verifications[1], invocations.Dequeue(), handeldInvocations) {
-
-                            }
-                            else
-                            {
-
-                            }
-                        }
-                        else
-                        {
-
-                        }
-                    }
-                    else
-                    {
-
-                    }
+                    HitAll(handeldInvocations, invocations, v);
                     return true;
                 }
-                return next?.HitCurrentOrNextGroup(handeldInvocations, invocation, invocations) == true;
+                return next?.HitCurrentOrNextGroup(handeldInvocations, invocation, invocations, 0) == true;
             }
+
             public VerificationGroup Times(int value)
             {
                 return new VerificationGroup(this, value);
             }
-
         }
 
                 //foreach (VerificationResult verificationResult in verificationResults)

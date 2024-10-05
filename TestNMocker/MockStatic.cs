@@ -179,6 +179,84 @@ Expected to call 1 times, but actually call 0 times.", exception.Message);
             AssertInvocation(verify[1], "hit(1)", +6, "static Target::method(String<b>)", +2);
         }
 
+        [TestMethod]
+        public void a_b_hit_a_x()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("b");
+
+            List<Verifier.HandledInvocation> verify = Verifier.Times(1)
+                .Call(() => Target.method("a"))
+                .Call(() => Target.method("x"))
+                .Verify();
+            Assert.AreEqual(2, verify.Count);
+            AssertInvocation(verify[0], "hit(1)", +5, "static Target::method(String<a>)", +1);
+            AssertInvocation(verify[1], "static Target::method(String<b>)", +2);
+        }
+
+        [TestMethod]
+        public void a_b_hit_a_and_b()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("b");
+
+            List<Verifier.HandledInvocation> verify = Verifier
+                .Times(1).Call(() => Target.method("a"))
+                .Times(1).Call(() => Target.method("b"))
+                .Verify();
+            Assert.AreEqual(2, verify.Count);
+            AssertInvocation(verify[0], "hit(1)", +5, "static Target::method(String<a>)", +1);
+            AssertInvocation(verify[1], "hit(1)", +6, "static Target::method(String<b>)", +2);
+        }
+
+        [TestMethod]
+        public void a_b_c_d_hit_a_b_and_c_d()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("b");
+            Target.method("c");
+            Target.method("d");
+
+            List<Verifier.HandledInvocation> verify = Verifier
+                .Times(1)
+                .Call(() => Target.method("a"))
+                .Call(() => Target.method("b"))
+                .Times(1)
+                .Call(() => Target.method("c"))
+                .Call(() => Target.method("d"))
+                .Verify();
+            Assert.AreEqual(4, verify.Count);
+            AssertInvocation(verify[0], "hit(1)", +8, "static Target::method(String<a>)", +1);
+            AssertInvocation(verify[1], "hit(1)", +9, "static Target::method(String<b>)", +2);
+            AssertInvocation(verify[2], "hit(1)", +11, "static Target::method(String<c>)", +3);
+            AssertInvocation(verify[3], "hit(1)", +12, "static Target::method(String<d>)", +4);
+        }
+
+        [TestMethod]
+        public void a_b_c_d_hit_a_and_c()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("b");
+            Target.method("c");
+            Target.method("d");
+
+            List<Verifier.HandledInvocation> verify = Verifier
+                .Times(1)
+                .Call(() => Target.method("a"))
+                .Times(1)
+                .Call(() => Target.method("c"))
+                .Verify();
+            Assert.AreEqual(4, verify.Count);
+            AssertInvocation(verify[0], "hit(1)", +8, "static Target::method(String<a>)", +1);
+            AssertInvocation(verify[1], "static Target::method(String<b>)", +2);
+            AssertInvocation(verify[2], "hit(1)", +10, "static Target::method(String<c>)", +3);
+            AssertInvocation(verify[3], "static Target::method(String<d>)", +4);
+        }
+
         //[TestMethod]
         public void a_a_hit_a()
         {
