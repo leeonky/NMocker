@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NMocker.Extentions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -57,10 +58,7 @@ namespace NMocker
 
             public bool Hit(Invocation invocation)
             {
-                bool hit = invocationMatcher.Matches(invocation);
-                if (hit)
-                    invocations.Add(invocation);
-                return hit;
+                return invocationMatcher.Matches(invocation).Then(() => invocations.Add(invocation));
             }
 
             public int HitCount
@@ -99,40 +97,37 @@ namespace NMocker
 
             public List<HandledInvocation> Verify()
             {
-                List<HandledInvocation> handeldInvocations = new List<HandledInvocation>();
-                root.HitAll(handeldInvocations, new Queue<Invocation>(Invocation.invocations), 0);
-                return handeldInvocations;
+                List<HandledInvocation> handledInvocations = new List<HandledInvocation>();
+                root.HitAll(handledInvocations, new Queue<Invocation>(Invocation.invocations), 0);
+                return handledInvocations;
             }
 
-            private void HitAll(List<HandledInvocation> handeldInvocations, Queue<Invocation> invocations, int v)
+            private void HitAll(List<HandledInvocation> handledInvocations, Queue<Invocation> invocations, int v)
             {
                 if (invocations.Any())
                 {
                     Invocation invocation = invocations.Dequeue();
-                    if (!HitCurrentOrNextGroup(handeldInvocations, invocation, invocations, v))
-                        handeldInvocations.Add(new HandledInvocation(invocation));
-                    next?.HitAll(handeldInvocations, invocations, 0);
+                    if (!HitCurrentOrNextGroup(handledInvocations, invocation, invocations, v))
+                    {
+                        handledInvocations.Add(new HandledInvocation(invocation));
+                        HitAll(handledInvocations, invocations, v);
+                    }
                 }
             }
 
-            private bool Hit(Verification verification, Invocation invocation, List<HandledInvocation> handeldInvocations)
+            private bool HitCurrentOrNextGroup(List<HandledInvocation> handledInvocations, Invocation invocation, Queue<Invocation> invocations, int v)
             {
-                if (verification.Hit(invocation))
+                if (verifications.Count > v)
                 {
-                    handeldInvocations.Add(new HandledInvocation(invocation, verification));
-                    return true;
+                    if (verifications[v].Hit(invocation))
+                    {
+                        handledInvocations.Add(new HandledInvocation(invocation, verifications[v]));
+                        HitAll(handledInvocations, invocations, v + 1);
+                        return true;
+                    }
+                    return next?.HitCurrentOrNextGroup(handledInvocations, invocation, invocations, 0) == true;
                 }
-                return false;
-            }
-
-            private bool HitCurrentOrNextGroup(List<HandledInvocation> handeldInvocations, Invocation invocation, Queue<Invocation> invocations, int v)
-            {
-                if (verifications.Count > v && Hit(verifications[v++], invocation, handeldInvocations))
-                {
-                    HitAll(handeldInvocations, invocations, v);
-                    return true;
-                }
-                return next?.HitCurrentOrNextGroup(handeldInvocations, invocation, invocations, 0) == true;
+                return verifications.Count != 0 && HitCurrentOrNextGroup(handledInvocations, invocation, invocations, 0);
             }
 
             public VerificationGroup Times(int value)

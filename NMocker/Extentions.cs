@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -33,6 +34,16 @@ namespace NMocker.Extentions
         public static string PositionString(this StackFrame stackFrame)
         {
             return string.Format("{0}:{1}", stackFrame.GetFileName(), stackFrame.GetFileLineNumber());
+        }
+    }
+
+    public static class BooleanExtensions
+    {
+        public static bool Then(this bool condition, Action action)
+        {
+            if (condition)
+                action();
+            return condition;
         }
     }
 }
