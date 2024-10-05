@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -8,176 +7,200 @@ using System.Text;
 
 namespace NMocker
 {
-    //public class Verifier
-    //{
-    //    public static VerificationGroup Times(int times)
-    //    {
-    //        return new VerificationGroup(times == 0 ? "no call" : string.Format("to call {0} times", times), times.Equals);
-    //    }
+    public class Verifier
+    {
+        public static VerificationGroup Times(int times)
+        {
+            return new VerificationGroup(times);
+        }
 
-    //    public static VerificationGroup AtLeast(int times)
-    //    {
-    //        return new VerificationGroup(string.Format("to call at least {0} times", times), i => i >= times);
-    //    }
+        //    public static VerificationGroup AtLeast(int times)
+        //    {
+        //        return new VerificationGroup(string.Format("to call at least {0} times", times), i => i >= times);
+        //    }
 
-    //    public static VerificationGroup AtMost(int times)
-    //    {
-    //        return new VerificationGroup(string.Format("to call at most {0} times", times), i => i <= times);
-    //    }
-    //    public static VerificationGroup Call(Expression<Action> invocation)
-    //    {
-    //        return AtLeast(1).Call(invocation, 1);
-    //    }
+        //    public static VerificationGroup AtMost(int times)
+        //    {
+        //        return new VerificationGroup(string.Format("to call at most {0} times", times), i => i <= times);
+        //    }
+        //    public static VerificationGroup Call(Expression<Action> invocation)
+        //    {
+        //        return AtLeast(1).Call(invocation, 1);
+        //    }
 
-    //    public static VerificationGroup Never { get { return Times(0); } }
+        //    public static VerificationGroup Never { get { return Times(0); } }
 
-    //    public static VerificationGroup Once { get { return Times(1); } }
-    //}
+        //    public static VerificationGroup Once { get { return Times(1); } }
+        //}
 
-    //public class Verification
-    //{
-    //    public readonly InvocationMatcher invocationMatcher;
-    //    private readonly string position;
-    //    private readonly List<Invocation> hits = new List<Invocation>();
+        public class Verification
+        {
+            public readonly InvocationMatcher invocationMatcher;
+            private readonly string position;
+            public readonly List<Invocation> invocations = new List<Invocation>();
 
-    //    public Verification(InvocationMatcher invocationMatcher, string position)
-    //    {
-    //        this.invocationMatcher = invocationMatcher;
-    //        this.position = position;
-    //    }
+            public Verification(InvocationMatcher invocationMatcher, string position)
+            {
+                this.invocationMatcher = invocationMatcher;
+                this.position = position;
+            }
 
-    //    public string MessageHitFrom(int hit)
-    //    {
-    //        return string.Format("hit({0}) from {1} => ", hit, position);
-    //    }
+            public string MessageHitFrom(int hit)
+            {
+                return string.Format("hit({0}) from {1} => ", hit, position);
+            }
 
-    //    public string UnsatisfiedMessage()
-    //    {
-    //        return string.Format("Unsatisfied invocation at {0}", position);
-    //    }
-    //}
+            public string UnsatisfiedMessage()
+            {
+                return string.Format("Unsatisfied invocation at {0}", position);
+            }
 
-    //public class VerificationGroup
-    //{
-    //    private Predicate<int> testTimes;
-    //    private string expectationMessage;
-    //    private List<Verification> verifications = new List<Verification>();
+            public bool Hit(Invocation invocation)
+            {
+                bool hit = invocationMatcher.Matches(invocation);
+                if (hit)
+                    invocations.Add(invocation);
+                return hit;
+            }
 
-    //    public VerificationGroup(string message, Predicate<int> testTimes)
-    //    {
-    //        this.expectationMessage = message;
-    //        this.testTimes = testTimes;
-    //    }
+            public int HitCount
+            {
+                get { return invocations.Count; }
+            }
+        }
 
-    //    public VerificationGroup Call(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
-    //    {
-    //        this.verifications.Add(new Verification(new InvocationMatcher(invocation), string.Format("{0}:{1}",file, line)));
-    //        return this;
-    //    }
+        public class VerificationGroup
+        {
+            private readonly int times;
+            private List<Verification> verifications = new List<Verification>();
+            private VerificationGroup verificationGroup;
+            private readonly VerificationGroup root;
+            private VerificationGroup next;
 
-    //    public void Verify()
-    //    {
-    //        List<Invocation> hits = new List<Invocation>();
-    //        Dictionary<Invocation, Verification> invocationHits = new Dictionary<Invocation, Verification>();
+            public VerificationGroup(int times)
+            {
+                this.times = times;
+                this.root = this;
+            }
 
-    //        for(int i=0; i<Invocation.invocations.Count;)
-    //        {
-    //            Invocation invocation = Invocation.invocations[i];
-    //            Verification verification = verifications[0];
+            public VerificationGroup(VerificationGroup verificationGroup, int times)
+            {
+                this.verificationGroup = verificationGroup;
+                this.times = times;
+                this.root = verificationGroup.root;
+                verificationGroup.next = this;
+            }
 
-    //            if (verification.invocationMatcher.Matches(invocation))
-    //            {
-    //                hits.Add(invocation);
-    //                invocationHits.Add(invocation, verification);
-    //            }
-    //            i++;
-    //        }
+            public VerificationGroup Call(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+            {
+                this.verifications.Add(new Verification(new InvocationMatcher(invocation), string.Format("{0}:{1}", file, line)));
+                return this;
+            }
 
-    //        if (!testTimes.Invoke(hits.Count))
-    //        {
-    //            StringBuilder message = new StringBuilder();
-    //            message.Append(verifications[0].UnsatisfiedMessage());
-    //            message.Append("\nAll invocations:\n");
+            public List<HandledInvocation> Verify()
+            {
+                List<HandledInvocation> handeldInvocations = new List<HandledInvocation>();
+                Queue<Invocation> invocations = new Queue<Invocation>(Invocation.invocations);
+                if (invocations.Any())
+                {
+                    Invocation invocation = invocations.Dequeue();
+                    if(!root.HitCurrentOrNextGroup(handeldInvocations, invocation, invocations))
+                        handeldInvocations.Add(new HandledInvocation(invocation));
+                }
+                return handeldInvocations;
+            }
 
-    //            int width = invocationHits.Keys.Select(invocation => invocationHits[invocation].MessageHitFrom(hits.IndexOf(invocation) + 1).Length)
-    //                .DefaultIfEmpty(0).Max();
+            private bool Hit(Verification verification, Invocation invocation, List<HandledInvocation> handeldInvocations)
+            {
+                if (verification.Hit(invocation))
+                {
+                    handeldInvocations.Add(new HandledInvocation(invocation, verification));
+                    return true;
+                }
+                return false;
+            }
 
-    //            foreach(Invocation invocation in Invocation.invocations)
-    //            {
-    //                message.Append("    ");
-    //                if (invocationHits.ContainsKey(invocation))
-    //                {
-    //                    message.Append(invocationHits[invocation].MessageHitFrom(hits.IndexOf(invocation) + 1));
-    //                    message.Append(invocation.Dump()).Append('\n');
-    //                }
-    //                else
-    //                {
-    //                    message.Append(new String(' ', width));
-    //                    message.Append(invocation.Dump()).Append('\n');
-    //                }
-    //            }
+            private bool HitCurrentOrNextGroup(List<HandledInvocation> handeldInvocations, Invocation invocation, Queue<Invocation> invocations)
+            {
+                Verification verification = verifications[0];
+                if (Hit(verification, invocation, handeldInvocations))
+                {
+                    if (verifications.Count > 1)
+                    {
+                        if (invocations.Any())
+                        {
+                            if (Hit(verifications[1], invocations.Dequeue(), handeldInvocations) {
 
-    //            message.Append(string.Format("Expected {0}, but actually call {1} times.", expectationMessage, hits.Count));
-    //            throw new UnexpectedCallException(message.ToString());
-    //        }
+                            }
+                            else
+                            {
 
-    //        //int groupHitNumber = 0;
-    //        //List<HitResult> hitResults = new List<HitResult>();
-    //        //for (int i = 0; i < Invocation.invocations.Count;)
-    //        //{
-    //        //    int hit = 0;
-    //        //    int j = 0;
-    //        //    while (j < verifications.Count && i < Invocation.invocations.Count)
-    //        //    {
-    //        //        Invocation invocation = Invocation.invocations[i++];
-    //        //        Verification verification = verifications[j];
+                            }
+                        }
+                        else
+                        {
 
-    //        //        if (verification.Hit(invocation))
-    //        //        {
-    //        //            hitResults.Add(new Hit(groupHitNumber + 1, invocation, verification));
-    //        //            hit++;
-    //        //            j++;
-    //        //        }
-    //        //        else if (j + 1 < verifications.Count && verifications[j + 1].Hit(invocation))
-    //        //        {
-    //        //            hitResults.Add(new Hit(groupHitNumber + 1, invocation, verifications[j + 1]));
-    //        //            hit++;
-    //        //            j += 2;
-    //        //        }
-    //        //        else
-    //        //            hitResults.Add(new HitResult(invocation));
-    //        //    }
-    //        //    if (hit == verifications.Count)
-    //        //        groupHitNumber++;
-    //        //}
+                        }
+                    }
+                    else
+                    {
 
+                    }
+                    return true;
+                }
+                return next?.HitCurrentOrNextGroup(handeldInvocations, invocation, invocations) == true;
+            }
+            public VerificationGroup Times(int value)
+            {
+                return new VerificationGroup(this, value);
+            }
 
+        }
 
-    //        //Verification verification = verifications[0]; //1
+                //foreach (VerificationResult verificationResult in verificationResults)
+                //{
+                //    if (times != verificationResult.Hit)
+                //    {
+                //        StringBuilder message = new StringBuilder();
+                //        message.Append(verificationResult.verification.UnsatisfiedMessage());
+                //        message.Append("\nAll invocations:\n");
+                //        int width = handeldInvocations.Select(r => r.Width).DefaultIfEmpty(0).Max();
+                //        foreach (HandledInvocation handledInvocation in handeldInvocations)
+                //            message.Append("    ").Append(handledInvocation.Dump(width)).Append('\n');
+                //        message.Append(string.Format("Expected to call {0} times, but actually call {1} times.", times, verificationResult.Hit));
+                //        throw new UnexpectedCallException(message.ToString());
+                //    }
+                //}
 
-    //        //List<HitResult> hitResults = new List<HitResult>();
+        public class HandledInvocation
+        {
 
-    //        //int hitCount = 0;
-    //        //foreach (Invocation invocation in Invocation.invocations)
-    //        //{
-    //        //    if(verification.Hit(invocation))
-    //        //    {
+            public HandledInvocation(Invocation invocation, Verification verificationResult = null)
+            {
+                this.verification = verificationResult;
+                Invocation = invocation;
+            }
 
-    //        //    }
-    //        //    hitResults.Add(verification.HitBk(invocation));
-    //        //}
+            public int Width
+            {
+                get {
+                    if (verification != null)
+                        return verification.MessageHitFrom(verification.invocations.IndexOf(Invocation) + 1).Length;
+                    return 0;
+                }
+            }
 
-    //        //if (!testTimes.Invoke(verification.hitCount))
-    //        //{
-    //        //    StringBuilder message = new StringBuilder();
-    //        //    message.Append(verification.UnsatisfiedMessage());
-    //        //    message.Append("\nAll invocations:\n");
-    //        //    int maxWidth = hitResults.Select(h => h.HitMessage(0).Length).DefaultIfEmpty(0).Max();
-    //        //    foreach (HitResult hit in hitResults)
-    //        //        message.Append("    ").Append(hit.HitMessage(maxWidth)).Append(hit.CalledMessage).Append('\n');
-    //        //    message.Append(string.Format("Expected {0}, but actually call {1} times.", expectationMessage, verification.hitCount));
-    //        //    throw new UnexpectedCallException(message.ToString());
-    //        //}
-    //    }
-    //}
+            public readonly Invocation Invocation;
+            public readonly Verification verification;
+
+            public string Dump(int width)
+            {
+                if(verification!=null)
+                {
+                    return verification.MessageHitFrom(verification.invocations.IndexOf(Invocation) + 1) + Invocation.Dump();
+                }
+                return new String(' ',width) +Invocation.Dump();
+            }
+        }
+    }
 }
