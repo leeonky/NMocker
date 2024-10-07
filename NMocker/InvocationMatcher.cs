@@ -46,7 +46,7 @@ namespace NMocker
 
         public bool Matches(Invocation invocation)
         {
-            return methodInfo == invocation.Method && invocation.Arguments.Length == argMatchers.Count 
+            return methodInfo == invocation.Method && invocation.Arguments.Length == argMatchers.Count
                 && Enumerable.Range(0, invocation.Arguments.Length)
                 .All(i => argMatchers[i].Matches(invocation.Arguments[i]));
         }

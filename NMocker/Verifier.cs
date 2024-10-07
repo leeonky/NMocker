@@ -51,9 +51,9 @@ namespace NMocker
                 return string.Format("hit({0}) from {1} => ", hit, position);
             }
 
-            public string UnsatisfiedMessage()
+            public string ActualMessage
             {
-                return string.Format("Unsatisfied invocation at {0}", position);
+                get { return $"actually call {HitCount} times from {position}"; }
             }
 
             public bool Hit(Invocation invocation)
@@ -71,7 +71,6 @@ namespace NMocker
         {
             private readonly int times;
             private List<Verification> verifications = new List<Verification>();
-            private VerificationGroup verificationGroup;
             private readonly VerificationGroup root;
             private VerificationGroup next;
 
@@ -83,7 +82,6 @@ namespace NMocker
 
             public VerificationGroup(VerificationGroup verificationGroup, int times)
             {
-                this.verificationGroup = verificationGroup;
                 this.times = times;
                 this.root = verificationGroup.root;
                 verificationGroup.next = this;
@@ -99,6 +97,22 @@ namespace NMocker
             {
                 List<HandledInvocation> handledInvocations = new List<HandledInvocation>();
                 root.HitAll(handledInvocations, new Queue<Invocation>(Invocation.invocations), 0);
+                bool failed = false;
+                StringBuilder message = new StringBuilder("Unsatisfied invocation:\n");
+                for (VerificationGroup verificationGroup = root; verificationGroup != null; verificationGroup = verificationGroup.next)
+                    foreach (Verification verification in verificationGroup.verifications)
+                        if (verificationGroup.times != verification.HitCount)
+                        {
+                            failed = true;
+                            message.Append($"    Expected to call {verificationGroup.times} times, but {verification.ActualMessage}\n");
+                        }
+                if (failed)
+                {
+                    message.Append("All invocations:");
+                    foreach (HandledInvocation handledInvocation in handledInvocations)
+                        message.Append("\n    ").Append(handledInvocation.Dump(0));
+                    throw new UnexpectedCallException(message.ToString());
+                }
                 return handledInvocations;
             }
 
@@ -136,20 +150,7 @@ namespace NMocker
             }
         }
 
-                //foreach (VerificationResult verificationResult in verificationResults)
-                //{
-                //    if (times != verificationResult.Hit)
-                //    {
-                //        StringBuilder message = new StringBuilder();
-                //        message.Append(verificationResult.verification.UnsatisfiedMessage());
-                //        message.Append("\nAll invocations:\n");
-                //        int width = handeldInvocations.Select(r => r.Width).DefaultIfEmpty(0).Max();
-                //        foreach (HandledInvocation handledInvocation in handeldInvocations)
-                //            message.Append("    ").Append(handledInvocation.Dump(width)).Append('\n');
-                //        message.Append(string.Format("Expected to call {0} times, but actually call {1} times.", times, verificationResult.Hit));
-                //        throw new UnexpectedCallException(message.ToString());
-                //    }
-                //}
+        //        int width = handeldInvocations.Select(r => r.Width).DefaultIfEmpty(0).Max();
 
         public class HandledInvocation
         {
@@ -162,7 +163,8 @@ namespace NMocker
 
             public int Width
             {
-                get {
+                get
+                {
                     if (verification != null)
                         return verification.MessageHitFrom(verification.invocations.IndexOf(Invocation) + 1).Length;
                     return 0;
@@ -174,11 +176,11 @@ namespace NMocker
 
             public string Dump(int width)
             {
-                if(verification!=null)
+                if (verification != null)
                 {
                     return verification.MessageHitFrom(verification.invocations.IndexOf(Invocation) + 1) + Invocation.Dump();
                 }
-                return new String(' ',width) +Invocation.Dump();
+                return new String(' ', width) + Invocation.Dump();
             }
         }
     }
