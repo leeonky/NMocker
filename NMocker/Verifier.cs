@@ -36,9 +36,9 @@ namespace NMocker
 
         public class Verification
         {
-            public readonly InvocationMatcher invocationMatcher;
+            private readonly InvocationMatcher invocationMatcher;
             private readonly string position;
-            public readonly List<Invocation> invocations = new List<Invocation>();
+            private readonly List<Invocation> invocations = new List<Invocation>();
 
             public Verification(InvocationMatcher invocationMatcher, string position)
             {
@@ -46,9 +46,9 @@ namespace NMocker
                 this.position = position;
             }
 
-            public string MessageHitFrom(int hit)
+            public string MessageHitFrom(Invocation invocation)
             {
-                return string.Format("hit({0}) from {1} => ", hit, position);
+                return string.Format("hit({0}) from {1} => ", invocations.IndexOf(invocation) + 1, position);
             }
 
             public string ActualMessage
@@ -93,7 +93,7 @@ namespace NMocker
                 return this;
             }
 
-            public List<HandledInvocation> Verify()
+            public void Verify()
             {
                 List<HandledInvocation> handledInvocations = new List<HandledInvocation>();
                 root.HitAll(handledInvocations, new Queue<Invocation>(Invocation.invocations), 0);
@@ -108,12 +108,12 @@ namespace NMocker
                         }
                 if (failed)
                 {
+                    int width = handledInvocations.Select(r => r.Width).DefaultIfEmpty(0).Max();
                     message.Append("All invocations:");
                     foreach (HandledInvocation handledInvocation in handledInvocations)
-                        message.Append("\n    ").Append(handledInvocation.Dump(0));
+                        message.Append("\n    ").Append(handledInvocation.Dump(width));
                     throw new UnexpectedCallException(message.ToString());
                 }
-                return handledInvocations;
             }
 
             private void HitAll(List<HandledInvocation> handledInvocations, Queue<Invocation> invocations, int v)
@@ -150,15 +150,13 @@ namespace NMocker
             }
         }
 
-        //        int width = handeldInvocations.Select(r => r.Width).DefaultIfEmpty(0).Max();
-
         public class HandledInvocation
         {
 
-            public HandledInvocation(Invocation invocation, Verification verificationResult = null)
+            public HandledInvocation(Invocation invocation, Verification verification = null)
             {
-                this.verification = verificationResult;
-                Invocation = invocation;
+                this.verification = verification;
+                this.invocation = invocation;
             }
 
             public int Width
@@ -166,21 +164,25 @@ namespace NMocker
                 get
                 {
                     if (verification != null)
-                        return verification.MessageHitFrom(verification.invocations.IndexOf(Invocation) + 1).Length;
+                        return verification.MessageHitFrom(invocation).Length;
                     return 0;
                 }
             }
 
-            public readonly Invocation Invocation;
-            public readonly Verification verification;
+            private readonly Invocation invocation;
+            private readonly Verification verification;
 
             public string Dump(int width)
             {
                 if (verification != null)
                 {
-                    return verification.MessageHitFrom(verification.invocations.IndexOf(Invocation) + 1) + Invocation.Dump();
+                    string messageHitFrom = verification.MessageHitFrom(invocation);
+                    int sub = width - messageHitFrom.Length;
+                    if (sub > 0)
+                        messageHitFrom.Replace("=>", new String(' ', sub) + "=>");
+                    return messageHitFrom + invocation.Dump();
                 }
-                return new String(' ', width) + Invocation.Dump();
+                return new String(' ', width) + invocation.Dump();
             }
         }
     }
