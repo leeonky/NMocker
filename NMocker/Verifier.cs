@@ -12,12 +12,12 @@ namespace NMocker
     {
         public static VerificationGroup Times(int times)
         {
-            return new VerificationGroup(n => n == times, $"to call {times} times", times);
+            return new VerificationGroup(n => n == times, $"to call {times} times");
         }
 
         public static VerificationGroup AtLeast(int times)
         {
-            return new VerificationGroup(n => n >= times, $"to call at least {times} times", times);
+            return new VerificationGroup(n => n >= times, $"to call at least {times} times");
         }
 
         public static VerificationGroup Once()
@@ -27,7 +27,14 @@ namespace NMocker
 
         public static VerificationGroup AtMost(int times)
         {
-            return new VerificationGroup(n => n <= times, $"to call at most {times} times", times);
+            return new VerificationGroup(n => n <= times, $"to call at most {times} times");
+        }
+
+        public static VerificationGroupForVerifierDefault Called(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+        {
+            VerificationGroupForVerifierDefault verificationGroup = new VerificationGroupForVerifierDefault(n => n >= 1, "to call at least 1 times");
+            ((VerificationGroup)verificationGroup).Called(invocation, line, file);
+            return verificationGroup;
         }
 
         public class Verification
@@ -65,26 +72,24 @@ namespace NMocker
 
         public class VerificationGroup
         {
-            private readonly int times;
             private List<Verification> verifications = new List<Verification>();
             private readonly VerificationGroup root;
             private VerificationGroup next;
             private readonly Predicate<int> checking;
             private readonly string message;
 
-            public VerificationGroup(Predicate<int> checking, string message, int times, VerificationGroup verificationGroup = null)
+            public VerificationGroup(Predicate<int> checking, string message, VerificationGroup root = null)
             {
-                this.times = times;
                 this.checking = checking;
                 this.message = message;
-                if (verificationGroup == null)
+                if (root == null)
                 {
                     this.root = this;
                 }
                 else
                 {
-                    this.root = verificationGroup.root;
-                    verificationGroup.next = this;
+                    this.root = root.root;
+                    root.next = this;
                 }
             }
 
@@ -98,7 +103,7 @@ namespace NMocker
                 get { return message; }
             }
 
-            public VerificationGroup Call(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+            public VerificationGroup Called(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
             {
                 this.verifications.Add(new Verification(new InvocationMatcher(invocation), string.Format("{0}:{1}", file, line)));
                 return this;
@@ -157,12 +162,12 @@ namespace NMocker
 
             public VerificationGroup Times(int times)
             {
-                return new VerificationGroup(n => n == times, $"to call {times} times", times, this);
+                return new VerificationGroup(n => n == times, $"to call {times} times", this);
             }
 
             public VerificationGroup AtLeast(int times)
             {
-                return new VerificationGroup(n => n >= times, $"to call at least {times} times", times, this);
+                return new VerificationGroup(n => n >= times, $"to call at least {times} times", this);
             }
 
             public VerificationGroup Once()
@@ -172,9 +177,23 @@ namespace NMocker
 
             public VerificationGroup AtMost(int times)
             {
-                return new VerificationGroup(n => n <= times, $"to call at most {times} times", times, this);
+                return new VerificationGroup(n => n <= times, $"to call at most {times} times", this);
             }
         }
+
+        public class VerificationGroupForVerifierDefault : VerificationGroup
+        {
+            public VerificationGroupForVerifierDefault(Predicate<int> checking, string message, VerificationGroupForVerifierDefault root = null)
+                : base(checking, message, root) { }
+
+            new public VerificationGroupForVerifierDefault Called(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+            {
+                VerificationGroupForVerifierDefault verificationGroup = new VerificationGroupForVerifierDefault(n => n >= 1, "to call at least 1 times", this);
+                ((VerificationGroup)verificationGroup).Called(invocation, line, file);
+                return verificationGroup;
+            }
+        }
+
 
         public class HandledInvocation
         {

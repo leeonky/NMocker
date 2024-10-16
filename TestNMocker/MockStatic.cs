@@ -142,13 +142,13 @@ All invocations:{invocations}", exception.Message);
 
             ExecuteFailed(() =>
             {
-                Verifier.Times(1).Call(() => Target.method("a")).Verify();
+                Verifier.Times(1).Called(() => Target.method("a")).Verify();
             });
 
             VerifyMessage(4,
                 Expected("Expected to call 1 times, but actually call 0 times", 1));
 
-            Verifier.Times(0).Call(() => Target.method("a")).Verify();
+            Verifier.Times(0).Called(() => Target.method("a")).Verify();
         }
 
         [TestMethod]
@@ -159,14 +159,14 @@ All invocations:{invocations}", exception.Message);
 
             ExecuteFailed(() =>
             {
-                Verifier.Times(0).Call(() => Target.method("a")).Verify();
+                Verifier.Times(0).Called(() => Target.method("a")).Verify();
             });
 
             VerifyMessage(5,
                 Expected("Expected to call 0 times, but actually call 1 times", 1),
                 Invocation("hit(1)", 1, "static Target::method(String<a>)", 1));
 
-            Verifier.Times(1).Call(() => Target.method("a")).Verify();
+            Verifier.Times(1).Called(() => Target.method("a")).Verify();
         }
 
         [TestMethod]
@@ -177,14 +177,14 @@ All invocations:{invocations}", exception.Message);
 
             ExecuteFailed(() =>
             {
-                Verifier.Times(1).Call(() => Target.method("b")).Verify();
+                Verifier.Times(1).Called(() => Target.method("b")).Verify();
             });
 
             VerifyMessage(5,
                 Expected("Expected to call 1 times, but actually call 0 times", 1),
                 Invocation("static Target::method(String<a>)", 1));
 
-            Verifier.Times(0).Call(() => Target.method("b")).Verify();
+            Verifier.Times(0).Called(() => Target.method("b")).Verify();
         }
 
         [TestMethod]
@@ -196,8 +196,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                .Times(1).Call(() => Target.method("b"))
-                .Times(0).Call(() => Target.method("a"))
+                .Times(1).Called(() => Target.method("b"))
+                .Times(0).Called(() => Target.method("a"))
                 .Verify();
             });
 
@@ -207,8 +207,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(1)", 2, "static Target::method(String<a>)", 1));
 
             Verifier
-                .Times(0).Call(() => Target.method("b"))
-                .Times(1).Call(() => Target.method("a"))
+                .Times(0).Called(() => Target.method("b"))
+                .Times(1).Called(() => Target.method("a"))
                 .Verify();
         }
 
@@ -221,8 +221,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                .Times(0).Call(() => Target.method("a"))
-                .Times(1).Call(() => Target.method("b"))
+                .Times(0).Called(() => Target.method("a"))
+                .Times(1).Called(() => Target.method("b"))
                 .Verify();
             });
 
@@ -232,8 +232,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(1)", 1, "static Target::method(String<a>)", 1));
 
             Verifier
-                .Times(1).Call(() => Target.method("a"))
-                .Times(0).Call(() => Target.method("b"))
+                .Times(1).Called(() => Target.method("a"))
+                .Times(0).Called(() => Target.method("b"))
                 .Verify();
         }
 
@@ -246,8 +246,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                .Times(1).Call(() => Target.method("b"))
-                .Times(1).Call(() => Target.method("c"))
+                .Times(1).Called(() => Target.method("b"))
+                .Times(1).Called(() => Target.method("c"))
                 .Verify();
             });
 
@@ -257,8 +257,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("static Target::method(String<a>)", 1));
 
             Verifier
-                .Times(0).Call(() => Target.method("b"))
-                .Times(0).Call(() => Target.method("c"))
+                .Times(0).Called(() => Target.method("b"))
+                .Times(0).Called(() => Target.method("c"))
                 .Verify();
         }
 
@@ -271,8 +271,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(1)
-                .Call(() => Target.method("a"))
-                .Call(() => Target.method("b"))
+                .Called(() => Target.method("a"))
+                .Called(() => Target.method("b"))
                 .Verify();
             });
 
@@ -283,8 +283,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(0)
-                .Call(() => Target.method("a"))
-                .Call(() => Target.method("b"))
+                .Called(() => Target.method("a"))
+                .Called(() => Target.method("b"))
                 .Verify();
             });
 
@@ -302,8 +302,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(1)
-                .Call(() => Target.method("x"))
-                .Call(() => Target.method("a"))
+                .Called(() => Target.method("x"))
+                .Called(() => Target.method("a"))
                 .Verify();
             });
 
@@ -313,8 +313,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("static Target::method(String<a>)", 1));
 
             Verifier.Times(0)
-                .Call(() => Target.method("x"))
-                .Call(() => Target.method("a"))
+                .Called(() => Target.method("x"))
+                .Called(() => Target.method("a"))
                 .Verify();
         }
 
@@ -328,8 +328,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(0)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("b"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("b"))
                     .Verify();
             });
 
@@ -340,8 +340,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(1)", 2, "static Target::method(String<b>)", 2));
 
             Verifier.Times(1)
-                .Call(() => Target.method("a"))
-                .Call(() => Target.method("b"))
+                .Called(() => Target.method("a"))
+                .Called(() => Target.method("b"))
                 .Verify();
         }
 
@@ -355,8 +355,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(1)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("c"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("c"))
                     .Verify();
             });
 
@@ -368,8 +368,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(0)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("c"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("c"))
                     .Verify();
             });
 
@@ -390,8 +390,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier.Times(0)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("b"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("b"))
                     .Verify();
             });
 
@@ -403,8 +403,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(1)", 2, "static Target::method(String<b>)", 3));
 
             Verifier.Times(1)
-                .Call(() => Target.method("a"))
-                .Call(() => Target.method("b"))
+                .Called(() => Target.method("a"))
+                .Called(() => Target.method("b"))
                 .Verify();
         }
 
@@ -418,8 +418,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                    .Times(0).Call(() => Target.method("a"))
-                    .Times(0).Call(() => Target.method("b"))
+                    .Times(0).Called(() => Target.method("a"))
+                    .Times(0).Called(() => Target.method("b"))
                     .Verify();
             });
 
@@ -430,8 +430,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(1)", 2, "static Target::method(String<b>)", 2));
 
             Verifier
-                .Times(1).Call(() => Target.method("a"))
-                .Times(1).Call(() => Target.method("b"))
+                .Times(1).Called(() => Target.method("a"))
+                .Times(1).Called(() => Target.method("b"))
                 .Verify();
         }
 
@@ -448,11 +448,11 @@ All invocations:{invocations}", exception.Message);
             {
                 Verifier
                     .Times(0)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("b"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("b"))
                     .Times(0)
-                    .Call(() => Target.method("c"))
-                    .Call(() => Target.method("d"))
+                    .Called(() => Target.method("c"))
+                    .Called(() => Target.method("d"))
                     .Verify();
             });
 
@@ -468,11 +468,11 @@ All invocations:{invocations}", exception.Message);
 
             Verifier
                 .Times(1)
-                .Call(() => Target.method("a"))
-                .Call(() => Target.method("b"))
+                .Called(() => Target.method("a"))
+                .Called(() => Target.method("b"))
                 .Times(1)
-                .Call(() => Target.method("c"))
-                .Call(() => Target.method("d"))
+                .Called(() => Target.method("c"))
+                .Called(() => Target.method("d"))
                 .Verify();
         }
 
@@ -487,11 +487,11 @@ All invocations:{invocations}", exception.Message);
             {
                 Verifier
                     .Times(0)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("b"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("b"))
                     .Times(0)
-                    .Call(() => Target.method("c"))
-                    .Call(() => Target.method("d"))
+                    .Called(() => Target.method("c"))
+                    .Called(() => Target.method("d"))
                     .Verify();
             });
 
@@ -505,11 +505,11 @@ All invocations:{invocations}", exception.Message);
             {
                 Verifier
                     .Times(1)
-                    .Call(() => Target.method("a"))
-                    .Call(() => Target.method("b"))
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("b"))
                     .Times(1)
-                    .Call(() => Target.method("c"))
-                    .Call(() => Target.method("d"))
+                    .Called(() => Target.method("c"))
+                    .Called(() => Target.method("d"))
                     .Verify();
             });
 
@@ -532,8 +532,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                    .Times(0).Call(() => Target.method("a"))
-                    .Times(0).Call(() => Target.method("c"))
+                    .Times(0).Called(() => Target.method("a"))
+                    .Times(0).Called(() => Target.method("c"))
                     .Verify();
             });
 
@@ -546,8 +546,8 @@ All invocations:{invocations}", exception.Message);
                 Invocation("static Target::method(String<d>)", 4));
 
             Verifier
-                .Times(1).Call(() => Target.method("a"))
-                .Times(1).Call(() => Target.method("c"))
+                .Times(1).Called(() => Target.method("a"))
+                .Times(1).Called(() => Target.method("c"))
                 .Verify();
         }
 
@@ -560,7 +560,7 @@ All invocations:{invocations}", exception.Message);
 
             ExecuteFailed(() =>
             {
-                Verifier.Times(1).Call(() => Target.method("a")).Verify();
+                Verifier.Times(1).Called(() => Target.method("a")).Verify();
             });
 
             VerifyMessage(6,
@@ -568,7 +568,7 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(1)", 1, "static Target::method(String<a>)", 1),
                 Invocation("hit(2)", 1, "static Target::method(String<a>)", 2));
 
-            Verifier.Times(2).Call(() => Target.method("a")).Verify();
+            Verifier.Times(2).Called(() => Target.method("a")).Verify();
         }
     }
 
@@ -602,8 +602,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                    .AtLeast(3).Call(() => Target.method("a"))
-                    .AtLeast(3).Call(() => Target.method("b"))
+                    .AtLeast(3).Called(() => Target.method("a"))
+                    .AtLeast(3).Called(() => Target.method("b"))
                     .Verify();
             });
 
@@ -616,13 +616,13 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(2)", 2, "static Target::method(String<b>)", 4));
 
             Verifier
-                .AtLeast(2).Call(() => Target.method("a"))
-                .AtLeast(2).Call(() => Target.method("b"))
+                .AtLeast(2).Called(() => Target.method("a"))
+                .AtLeast(2).Called(() => Target.method("b"))
                 .Verify();
 
             Verifier
-                .AtLeast(1).Call(() => Target.method("a"))
-                .AtLeast(1).Call(() => Target.method("b"))
+                .AtLeast(1).Called(() => Target.method("a"))
+                .AtLeast(1).Called(() => Target.method("b"))
                 .Verify();
 
         }
@@ -639,8 +639,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                    .Once().Call(() => Target.method("a"))
-                    .Once().Call(() => Target.method("b"))
+                    .Once().Called(() => Target.method("a"))
+                    .Once().Called(() => Target.method("b"))
                     .Verify();
             });
 
@@ -666,8 +666,8 @@ All invocations:{invocations}", exception.Message);
             ExecuteFailed(() =>
             {
                 Verifier
-                    .AtMost(1).Call(() => Target.method("a"))
-                    .AtMost(1).Call(() => Target.method("b"))
+                    .AtMost(1).Called(() => Target.method("a"))
+                    .AtMost(1).Called(() => Target.method("b"))
                     .Verify();
             });
 
@@ -681,14 +681,42 @@ All invocations:{invocations}", exception.Message);
                 );
 
             Verifier
-                .AtMost(2).Call(() => Target.method("a"))
-                .AtMost(2).Call(() => Target.method("b"))
+                .AtMost(2).Called(() => Target.method("a"))
+                .AtMost(2).Called(() => Target.method("b"))
                 .Verify();
 
             Verifier
-                .AtMost(3).Call(() => Target.method("a"))
-                .AtMost(3).Call(() => Target.method("b"))
+                .AtMost(3).Called(() => Target.method("a"))
+                .AtMost(3).Called(() => Target.method("b"))
                 .Verify();
+        }
+
+        [TestMethod]
+        public void default_is_at_least_call_in_single_group()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Called(() => Target.method("a"))
+                    .Called(() => Target.method("b"))
+                    .Verify();
+            });
+
+            VerifyMessage(6,
+                Expected("Expected to call at least 1 times, but actually call 0 times", 2),
+                Invocation("hit(1)", 1, "static Target::method(String<a>)", 1));
+
+            Verifier
+               .Called(() => Target.method("a"))
+                .Verify();
+
+            Verifier
+                .AtLeast(1).Called(() => Target.method("a"))
+                .Verify();
+
         }
     }
 }
