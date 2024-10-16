@@ -12,27 +12,23 @@ namespace NMocker
     {
         public static VerificationGroup Times(int times)
         {
-            return new VerificationGroup(times);
+            return new VerificationGroup(n => n == times, $"to call {times} times", times);
         }
 
-        //    public static VerificationGroup AtLeast(int times)
-        //    {
-        //        return new VerificationGroup(string.Format("to call at least {0} times", times), i => i >= times);
-        //    }
+        public static VerificationGroup AtLeast(int times)
+        {
+            return new VerificationGroup(n => n >= times, $"to call at least {times} times", times);
+        }
 
-        //    public static VerificationGroup AtMost(int times)
-        //    {
-        //        return new VerificationGroup(string.Format("to call at most {0} times", times), i => i <= times);
-        //    }
-        //    public static VerificationGroup Call(Expression<Action> invocation)
-        //    {
-        //        return AtLeast(1).Call(invocation, 1);
-        //    }
+        public static VerificationGroup Once()
+        {
+            return Times(1);
+        }
 
-        //    public static VerificationGroup Never { get { return Times(0); } }
-
-        //    public static VerificationGroup Once { get { return Times(1); } }
-        //}
+        public static VerificationGroup AtMost(int times)
+        {
+            return new VerificationGroup(n => n <= times, $"to call at most {times} times", times);
+        }
 
         public class Verification
         {
@@ -73,18 +69,33 @@ namespace NMocker
             private List<Verification> verifications = new List<Verification>();
             private readonly VerificationGroup root;
             private VerificationGroup next;
+            private readonly Predicate<int> checking;
+            private readonly string message;
 
-            public VerificationGroup(int times)
+            public VerificationGroup(Predicate<int> checking, string message, int times, VerificationGroup verificationGroup = null)
             {
                 this.times = times;
-                this.root = this;
+                this.checking = checking;
+                this.message = message;
+                if (verificationGroup == null)
+                {
+                    this.root = this;
+                }
+                else
+                {
+                    this.root = verificationGroup.root;
+                    verificationGroup.next = this;
+                }
             }
 
-            public VerificationGroup(VerificationGroup verificationGroup, int times)
+            public bool Failed(int times)
             {
-                this.times = times;
-                this.root = verificationGroup.root;
-                verificationGroup.next = this;
+                return !checking.Invoke(times);
+            }
+
+            public string Message
+            {
+                get { return message; }
             }
 
             public VerificationGroup Call(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
@@ -101,10 +112,10 @@ namespace NMocker
                 StringBuilder message = new StringBuilder("Unsatisfied invocation:\n");
                 for (VerificationGroup verificationGroup = root; verificationGroup != null; verificationGroup = verificationGroup.next)
                     foreach (Verification verification in verificationGroup.verifications)
-                        if (verificationGroup.times != verification.HitCount)
+                        if (verificationGroup.Failed(verification.HitCount))
                         {
                             failed = true;
-                            message.Append($"    Expected to call {verificationGroup.times} times, but {verification.ActualMessage}\n");
+                            message.Append($"    Expected {verificationGroup.Message}, but {verification.ActualMessage}\n");
                         }
                 if (failed)
                 {
@@ -144,15 +155,29 @@ namespace NMocker
                 return verifications.Count != 0 && HitCurrentOrNextGroup(handledInvocations, invocation, invocations, 0);
             }
 
-            public VerificationGroup Times(int value)
+            public VerificationGroup Times(int times)
             {
-                return new VerificationGroup(this, value);
+                return new VerificationGroup(n => n == times, $"to call {times} times", times, this);
+            }
+
+            public VerificationGroup AtLeast(int times)
+            {
+                return new VerificationGroup(n => n >= times, $"to call at least {times} times", times, this);
+            }
+
+            public VerificationGroup Once()
+            {
+                return Times(1);
+            }
+
+            public VerificationGroup AtMost(int times)
+            {
+                return new VerificationGroup(n => n <= times, $"to call at most {times} times", times, this);
             }
         }
 
         public class HandledInvocation
         {
-
             public HandledInvocation(Invocation invocation, Verification verification = null)
             {
                 this.verification = verification;

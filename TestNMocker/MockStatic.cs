@@ -571,4 +571,124 @@ All invocations:{invocations}", exception.Message);
             Verifier.Times(2).Call(() => Target.method("a")).Verify();
         }
     }
+
+    [TestClass]
+    public class MoreVerificationApi : TestBase
+    {
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+            Mocker.When(() => Target.method(Arg.Any<string>())).ThenDefault();
+        }
+
+        public class Target
+        {
+            public static int method(string s)
+            {
+                return 0;
+            }
+        }
+
+        [TestMethod]
+        public void at_least()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("a");
+            Target.method("b");
+            Target.method("b");
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .AtLeast(3).Call(() => Target.method("a"))
+                    .AtLeast(3).Call(() => Target.method("b"))
+                    .Verify();
+            });
+
+            VerifyMessage(9,
+                Expected("Expected to call at least 3 times, but actually call 2 times", 1),
+                Expected("Expected to call at least 3 times, but actually call 2 times", 2),
+                Invocation("hit(1)", 1, "static Target::method(String<a>)", 1),
+                Invocation("hit(2)", 1, "static Target::method(String<a>)", 2),
+                Invocation("hit(1)", 2, "static Target::method(String<b>)", 3),
+                Invocation("hit(2)", 2, "static Target::method(String<b>)", 4));
+
+            Verifier
+                .AtLeast(2).Call(() => Target.method("a"))
+                .AtLeast(2).Call(() => Target.method("b"))
+                .Verify();
+
+            Verifier
+                .AtLeast(1).Call(() => Target.method("a"))
+                .AtLeast(1).Call(() => Target.method("b"))
+                .Verify();
+
+        }
+
+        [TestMethod]
+        public void once()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("a");
+            Target.method("b");
+            Target.method("b");
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Once().Call(() => Target.method("a"))
+                    .Once().Call(() => Target.method("b"))
+                    .Verify();
+            });
+
+            VerifyMessage(9,
+                Expected("Expected to call 1 times, but actually call 2 times", 1),
+                Expected("Expected to call 1 times, but actually call 2 times", 2),
+                Invocation("hit(1)", 1, "static Target::method(String<a>)", 1),
+                Invocation("hit(2)", 1, "static Target::method(String<a>)", 2),
+                Invocation("hit(1)", 2, "static Target::method(String<b>)", 3),
+                Invocation("hit(2)", 2, "static Target::method(String<b>)", 4)
+                );
+        }
+
+        [TestMethod]
+        public void at_most()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.method("a");
+            Target.method("a");
+            Target.method("b");
+            Target.method("b");
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .AtMost(1).Call(() => Target.method("a"))
+                    .AtMost(1).Call(() => Target.method("b"))
+                    .Verify();
+            });
+
+            VerifyMessage(9,
+                Expected("Expected to call at most 1 times, but actually call 2 times", 1),
+                Expected("Expected to call at most 1 times, but actually call 2 times", 2),
+                Invocation("hit(1)", 1, "static Target::method(String<a>)", 1),
+                Invocation("hit(2)", 1, "static Target::method(String<a>)", 2),
+                Invocation("hit(1)", 2, "static Target::method(String<b>)", 3),
+                Invocation("hit(2)", 2, "static Target::method(String<b>)", 4)
+                );
+
+            Verifier
+                .AtMost(2).Call(() => Target.method("a"))
+                .AtMost(2).Call(() => Target.method("b"))
+                .Verify();
+
+            Verifier
+                .AtMost(3).Call(() => Target.method("a"))
+                .AtMost(3).Call(() => Target.method("b"))
+                .Verify();
+        }
+    }
 }
