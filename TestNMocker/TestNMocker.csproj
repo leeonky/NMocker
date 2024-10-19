@@ -53,6 +53,7 @@
     <Compile Include="StubPrivetStaticMethod.cs" />
     <Compile Include="StubPublicStaticMethod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StubPublicStaticProperty.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

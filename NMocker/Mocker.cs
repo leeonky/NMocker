@@ -40,12 +40,17 @@ namespace NMocker
 
         public static Mocker When(Expression<Action> action)
         {
-            return new Mocker(new InvocationMatcher(action));
+            return new Mocker(InvocationMatcher.Create(action));
+        }
+
+        public static Mocker When<T>(Expression<Func<T>> action)
+        {
+            return new Mocker(InvocationMatcher.Create(action));
         }
 
         public static Mocker When(Type type, string method, params object[] args)
         {
-            return new Mocker(new InvocationMatcher(type, method, args == null ? new object[] { null } : args));
+            return new Mocker(InvocationMatcher.Create(type, method, args == null ? new object[] { null } : args));
         }
 
         public void ThenReturn(object value)

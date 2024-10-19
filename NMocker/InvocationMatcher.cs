@@ -14,30 +14,44 @@ namespace NMocker
         private readonly MethodInfo methodInfo;
         private readonly List<ArgMatcher> argMatchers;
 
-        public InvocationMatcher(Expression<Action> action)
+        public InvocationMatcher(MethodInfo methodInfo, List<ArgMatcher> argMatchers)
+        {
+            this.methodInfo = methodInfo;
+            this.argMatchers = argMatchers;
+        }
+
+        public static InvocationMatcher Create<T>(Expression<T> action)
         {
             if (action.Body is MethodCallExpression method)
             {
-                methodInfo = SymbolExtensions.GetMethodInfo(action);
-                argMatchers = method.Arguments.Select(CompileArgMatcher).ToList();
-                return;
+                return new InvocationMatcher(SymbolExtensions.GetMethodInfo(action),
+                    method.Arguments.Select(CompileArgMatcher).ToList());
+            }
+            if (action.Body is MemberExpression member && member.Member is PropertyInfo property)
+            {
+                return new InvocationMatcher(property.GetMethod, new List<ArgMatcher>());
             }
             throw new InvalidOperationException();
         }
 
-        public InvocationMatcher(Type type, string methodName, object[] args)
+        public static InvocationMatcher Create(Type type, string methodName, object[] args)
         {
-            argMatchers = args.Select(CastToMatcher).ToList();
-            List<MethodInfo> methods = type.GetDeclaredMethods().FindAll(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m));
+            var argMatchers = args.Select(CastToMatcher).ToList();
+            List<MethodInfo> methods = FindMethod(type, methodName, argMatchers);
             if (!methods.Any())
                 throw new ArgumentException("No matching method found");
             if (methods.Count > 1)
                 throw new ArgumentException(methods.Aggregate(new StringBuilder("Ambiguous method between the following:"),
                     (builder, method) => builder.Append("\n    ").Append(method.Dump())).ToString());
-            methodInfo = methods[0];
+            return new InvocationMatcher(methods[0], argMatchers);
         }
 
-        private bool ArgTypesMatched(MethodInfo m)
+        private static List<MethodInfo> FindMethod(Type type, string methodName, List<ArgMatcher> argMatchers)
+        {
+            return type.GetDeclaredMethods().FindAll(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m, argMatchers));
+        }
+
+        private static bool ArgTypesMatched(MethodInfo m, List<ArgMatcher> argMatchers)
         {
             ParameterInfo[] parameters = m.GetParameters();
             return parameters.Length == argMatchers.Count && Enumerable.Range(0, parameters.Length)

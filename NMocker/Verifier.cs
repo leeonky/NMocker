@@ -105,7 +105,7 @@ namespace NMocker
 
             public VerificationGroup Called(Expression<Action> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
             {
-                this.verifications.Add(new Verification(new InvocationMatcher(invocation), string.Format("{0}:{1}", file, line)));
+                this.verifications.Add(new Verification(InvocationMatcher.Create(invocation), string.Format("{0}:{1}", file, line)));
                 return this;
             }
 
