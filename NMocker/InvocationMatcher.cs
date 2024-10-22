@@ -70,12 +70,23 @@ namespace NMocker
 
         private static ArgMatcher CompileArgMatcher(Expression argument)
         {
+            ArgMatcher argMatcher;
             if (argument is ConstantExpression)
-                return new RawTypeArgMatcher(argument.Type, actual => Object.Equals(actual, ((ConstantExpression)argument).Value));
-            if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert
-                && unaryExpression.Operand is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(Arg))
+                argMatcher = new RawTypeArgMatcher(argument.Type, actual => Object.Equals(actual, ((ConstantExpression)argument).Value));
+            else if (argument is UnaryExpression unaryExpression && unaryExpression.NodeType == ExpressionType.Convert)
+                argMatcher = Resolve(unaryExpression.Operand);
+            else
+                argMatcher = Resolve(argument);
+            if (argMatcher != null)
+                return argMatcher;
+            return new RawValueArgMatcher(Expression.Lambda(argument).Compile().DynamicInvoke());
+        }
+
+        private static ArgMatcher Resolve(Expression argument)
+        {
+            if (argument is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(Arg))
                 return new RawTypeArgMatcher(argument.Type, ((ArgMatcher)Expression.Lambda(methodCall).Compile().DynamicInvoke()).Matches);
-            throw new InvalidOperationException();
+            return null;
         }
 
         private static ArgMatcher CastToMatcher(object arg)

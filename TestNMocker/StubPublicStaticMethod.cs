@@ -150,6 +150,15 @@ namespace TestNMocker
         }
 
         [TestMethod]
+        public void use_var_in_method_arg_match()
+        {
+            int i = 1;
+            Mocker.When(() => Target.method(i)).ThenReturn(5);
+
+            Assert.AreEqual(5, Target.method(1));
+        }
+
+        [TestMethod]
         public void support_arg_is_match()
         {
             Mocker.When(() => Target.method(Arg.Is(1))).ThenReturn(5);

@@ -49,6 +49,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bugs.cs" />
     <Compile Include="MockStatic.cs" />
     <Compile Include="StubPrivetStaticProperty.cs" />
     <Compile Include="StubPrivetStaticMethod.cs" />
