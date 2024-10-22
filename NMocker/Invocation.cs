@@ -33,7 +33,7 @@ namespace NMocker
             this.method = method;
             this.instance = instance;
             this.args = args;
-            stackFrame = new StackTrace(true).GetFrames()[4];
+            stackFrame = new StackTrace(true).GetFrames()[5];
         }
 
         public string Dump()

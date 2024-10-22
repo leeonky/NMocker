@@ -424,4 +424,64 @@ namespace TestNMocker
             Assert.AreEqual("No matching method found", exception.Message);
         }
     }
+
+    [TestClass]
+    public class StubVoidMethod
+    {
+        public class Target
+        {
+            public static int value;
+            public static void method(int i)
+            {
+                value = i;
+            }
+        }
+
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+            Target.value = 0;
+        }
+
+        [TestMethod]
+        public void support_call_actual()
+        {
+            Mocker.When(() => Target.method(10)).ThenCallActual();
+
+            Target.method(10);
+
+            Assert.AreEqual(10, Target.value);
+        }
+
+        [TestMethod]
+        public void support_call_default()
+        {
+            Mocker.When(() => Target.method(10)).ThenDefault();
+
+            Target.method(10);
+
+            Assert.AreEqual(0, Target.value);
+        }
+
+        [TestMethod]
+        public void support_lambda()
+        {
+            Mocker.When(() => Target.method(10)).Then(objs => Target.value = 99);
+
+            Target.method(10);
+
+            Assert.AreEqual(99, Target.value);
+        }
+
+        [TestMethod]
+        public void support_reference_method_by_string()
+        {
+            Mocker.WhenVoid(typeof(Target), "method", 10).Then(objs => Target.value = 99);
+
+            Target.method(10);
+
+            Assert.AreEqual(99, Target.value);
+        }
+    }
 }

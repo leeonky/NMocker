@@ -20,6 +20,8 @@ namespace NMocker
             this.argMatchers = argMatchers;
         }
 
+        public bool IsVoidMethod { get { return methodInfo.ReturnType == typeof(void); } }
+
         public static InvocationMatcher Create<T>(Expression<T> action)
         {
             if (action.Body is MethodCallExpression method)
