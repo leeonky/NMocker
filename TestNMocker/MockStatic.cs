@@ -124,7 +124,7 @@ All invocations:{invocations}", exception.Message);
         public void setup()
         {
             Mocker.Clear();
-            Mocker.When(() => Target.method(Arg.Any<string>())).ThenDefault();
+            Mocker.Mock(() => Target.method(Arg.Any<string>()));
         }
 
         public class Target
@@ -759,7 +759,7 @@ All invocations:{invocations}", exception.Message);
         public void setup()
         {
             Mocker.Clear();
-            Mocker.When(() => Target.Method).ThenDefault();
+            Mocker.Mock(() => Target.Method);
         }
 
         public class Target

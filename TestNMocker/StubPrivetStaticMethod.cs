@@ -25,6 +25,15 @@ namespace TestNMocker
             {
                 return privateStatic("1");
             }
+
+            private static void privateStaticVoid(ref int i)
+            {
+            }
+
+            public static void invokePrivateStaticIntVoid(ref int i)
+            {
+                privateStaticVoid(ref i);
+            }
         }
 
         [TestInitialize]
@@ -47,6 +56,17 @@ namespace TestNMocker
             Mocker.When(typeof(Target), "privateStatic", 1).ThenReturn(1);
 
             Assert.AreEqual(1, Target.invokePrivateStaticInt());
+        }
+
+        [TestMethod]
+        public void support_stub_private_void_method()
+        {
+            Mocker.WhenVoid(typeof(Target), "privateStaticVoid", Arg.Is(10).Ref(1)).ThenDefault();
+
+            int i = 10;
+            Target.invokePrivateStaticIntVoid(ref i);
+
+            Assert.AreEqual(1, i);
         }
     }
 }
