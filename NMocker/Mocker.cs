@@ -73,6 +73,16 @@ namespace NMocker
             mockers.Add(this);
             this.then = then;
         }
+
+        public static void Mock(Expression<Action> action)
+        {
+            When(action).ThenDefault();
+        }
+
+        public static void Mock<T>(Expression<Func<T>> action)
+        {
+            When(action).ThenDefault();
+        }
     }
 
     public class Stub : Mocker

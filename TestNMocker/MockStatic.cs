@@ -579,7 +579,7 @@ All invocations:{invocations}", exception.Message);
         public void setup()
         {
             Mocker.Clear();
-            Mocker.When(() => Target.method(Arg.Any<string>())).ThenDefault();
+            Mocker.Mock(() => Target.method(Arg.Any<string>()));
         }
 
         public class Target
@@ -587,6 +587,10 @@ All invocations:{invocations}", exception.Message);
             public static int method(string s)
             {
                 return 0;
+            }
+
+            public static void methodVoid(string s)
+            {
             }
         }
 
@@ -718,5 +722,75 @@ All invocations:{invocations}", exception.Message);
                 .Verify();
 
         }
+
+        [TestMethod]
+        public void void_method()
+        {
+            Mocker.Mock(() => Target.methodVoid(Arg.Any<string>()));
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.methodVoid("a");
+            Target.methodVoid("a");
+            Target.methodVoid("b");
+            Target.methodVoid("b");
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Once().Called(() => Target.methodVoid("a"))
+                    .Once().Called(() => Target.methodVoid("b"))
+                    .Verify();
+            });
+
+            VerifyMessage(9,
+                Expected("Expected to call 1 times, but actually call 2 times", 1),
+                Expected("Expected to call 1 times, but actually call 2 times", 2),
+                Invocation("hit(1)", 1, "static Target::methodVoid(String<a>)", 1),
+                Invocation("hit(2)", 1, "static Target::methodVoid(String<a>)", 2),
+                Invocation("hit(1)", 2, "static Target::methodVoid(String<b>)", 3),
+                Invocation("hit(2)", 2, "static Target::methodVoid(String<b>)", 4)
+                );
+        }
+    }
+
+    [TestClass]
+    public class MockProperty : TestBase
+    {
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+            Mocker.When(() => Target.Method).ThenDefault();
+        }
+
+        public class Target
+        {
+            public static int Method { get { return 0; } }
+        }
+
+        [TestMethod]
+        public void verify()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            int i = Target.Method;
+            int j = Target.Method;
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Once().Called(() => Target.Method)
+                    .Verify();
+            });
+
+            VerifyMessage(7,
+                Expected("Expected to call 1 times, but actually call 2 times", 1),
+                Invocation("hit(1)", 1, "static Target::get_Method()", 1),
+                Invocation("hit(2)", 1, "static Target::get_Method()", 2)
+                );
+
+            Verifier
+                .Times(2).Called(() => Target.Method)
+                .Verify();
+        }
     }
 }
+

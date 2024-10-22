@@ -109,6 +109,12 @@ namespace NMocker
                 return this;
             }
 
+            public VerificationGroup Called<T>(Expression<Func<T>> invocation, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+            {
+                this.verifications.Add(new Verification(InvocationMatcher.Create(invocation), string.Format("{0}:{1}", file, line)));
+                return this;
+            }
+
             public void Verify()
             {
                 List<HandledInvocation> handledInvocations = new List<HandledInvocation>();
