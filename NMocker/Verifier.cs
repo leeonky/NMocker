@@ -120,6 +120,12 @@ namespace NMocker
                 return new VerificationGroupBuilder(type, member, line, file, this);
             }
 
+            public VerificationGroup Set(Type type, string member, object arg, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+            {
+                this.verifications.Add(new Verification(InvocationMatcher.CreateVoid(type ,member ,new object[] { arg }), string.Format("{0}:{1}", file, line)));
+                return this;
+            }
+
             public class VerificationGroupBuilder
             {
                 private readonly Type type;

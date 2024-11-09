@@ -858,36 +858,67 @@ All invocations:{invocations}", exception.Message);
         public void setup()
         {
             Mocker.Clear();
-            Mocker.Mock(() => Target.Method);
         }
 
         public class Target
         {
-            public static int Method { get { return 0; } }
+            public static int Property {
+                get { return 0; }
+                set { }
+            }
         }
 
         [TestMethod]
-        public void verify()
+        public void mock_and_verify_getter()
         {
+            Mocker.Mock(() => Target.Property);
+
             stackFrame = new StackTrace(true).GetFrame(0);
-            int i = Target.Method;
-            int j = Target.Method;
+            int i = Target.Property;
+            int j = Target.Property;
 
             ExecuteFailed(() =>
             {
                 Verifier
-                    .Once().Called(() => Target.Method)
+                    .Once().Called(() => Target.Property)
                     .Verify();
             });
 
             VerifyMessage(7,
                 Expected("Expected to call 1 times, but actually call 2 times", 1),
-                Invocation("hit(1)", 1, "static Target::get_Method()", 1),
-                Invocation("hit(2)", 1, "static Target::get_Method()", 2)
+                Invocation("hit(1)", 1, "static Target::get_Property()", 1),
+                Invocation("hit(2)", 1, "static Target::get_Property()", 2)
                 );
 
             Verifier
-                .Times(2).Called(() => Target.Method)
+                .Times(2).Called(() => Target.Property)
+                .Verify();
+        }
+
+        [TestMethod]
+        public void mock_and_verify_setter()
+        {
+            Mocker.MockVoid(typeof(Target), "Property");
+
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.Property = 1;
+            Target.Property = 1;
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Once().Set(typeof(Target), "Property", 1)
+                    .Verify();
+            });
+
+            VerifyMessage(7,
+                Expected("Expected to call 1 times, but actually call 2 times", 1),
+                Invocation("hit(1)", 1, "static Target::set_Property(Int32<1>)", 1),
+                Invocation("hit(2)", 1, "static Target::set_Property(Int32<1>)", 2)
+                );
+
+            Verifier
+                .Times(2).Set(typeof(Target), "Property", 1)
                 .Verify();
         }
     }
