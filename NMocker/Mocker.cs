@@ -83,6 +83,16 @@ namespace NMocker
         {
             When(action).ThenDefault();
         }
+
+        public static void Mock(Type type, String method, params object[] args)
+        {
+            When(type, method, args).ThenDefault();
+        }
+
+        public static void MockVoid(Type type, String method, params object[] args)
+        {
+            WhenVoid(type, method, args).ThenDefault();
+        }
     }
 
     public class Stub : Mocker

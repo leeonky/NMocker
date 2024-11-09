@@ -33,16 +33,20 @@ namespace TestNMocker
     {
         private string method;
         private int line;
+        readonly bool rel;
 
-        public InvocationVerification(string method, int line)
+        public InvocationVerification(string method, int line, bool rel = true)
         {
+            this.rel = rel;
             this.method = method;
             this.line = line;
         }
 
         public override string ToString(int verifyLineOffset, StackFrame stackFrame)
         {
-            return $"{method} called at {stackFrame.GetFileName()}:{stackFrame.GetFileLineNumber() + line}";
+            if (rel)
+                return $"{method} called at {stackFrame.GetFileName()}:{stackFrame.GetFileLineNumber() + line}";
+            return $"{method} called at {stackFrame.GetFileName()}:{line}";
         }
     }
 
@@ -51,7 +55,7 @@ namespace TestNMocker
         private readonly string hit;
         private readonly int line;
 
-        public HitInvocationVerification(string hit, int line, string method, int line2) : base(method, line2)
+        public HitInvocationVerification(string hit, int line, string method, int line2, bool rel = true) : base(method, line2, rel)
         {
             this.hit = hit;
             this.line = line;
@@ -104,6 +108,11 @@ All invocations:{invocations}", exception.Message);
         public LineVerification Invocation(string hit, int line, string method, int line2)
         {
             return new HitInvocationVerification(hit, line, method, line2);
+        }
+
+        public LineVerification Invocation2(string hit, int line, string method, int line2)
+        {
+            return new HitInvocationVerification(hit, line, method, line2, false);
         }
 
         public LineVerification Invocation(string method, int line)
@@ -748,6 +757,96 @@ All invocations:{invocations}", exception.Message);
                 Invocation("hit(2)", 1, "static Target::methodVoid(String<a>)", 2),
                 Invocation("hit(1)", 2, "static Target::methodVoid(String<b>)", 3),
                 Invocation("hit(2)", 2, "static Target::methodVoid(String<b>)", 4)
+                );
+        }
+    }
+
+    [TestClass]
+    public class PrivateMethod : TestBase
+    {
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+        }
+
+        public class Target
+        {
+            private static int Method(int i)
+            {
+                return 0;
+            }
+
+            public static void CallMethod(int i)
+            {
+                Method(i);
+            }
+
+            private static void MethodVoid(int i)
+            {
+            }
+
+            public static void CallMethodVoid(int i)
+            {
+                MethodVoid(i);
+            }
+        }
+
+        [TestMethod]
+        public void mock_method()
+        {
+            Mocker.Mock(typeof(Target), "Method", Arg.Any<int>());
+
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.CallMethod(1);
+            Target.CallMethod(1);
+            Target.CallMethod(2);
+            Target.CallMethod(2);
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Once().Called(typeof(Target), "Method").Args(1)
+                    .Once().Called(typeof(Target), "Method").Args(2)
+                    .Verify();
+            });
+
+            VerifyMessage(9,
+                Expected("Expected to call 1 times, but actually call 2 times", 1),
+                Expected("Expected to call 1 times, but actually call 2 times", 2),
+                Invocation2("hit(1)", 1, "static Target::Method(Int32<1>)", 782),
+                Invocation2("hit(2)", 1, "static Target::Method(Int32<1>)", 782),
+                Invocation2("hit(1)", 2, "static Target::Method(Int32<2>)", 782),
+                Invocation2("hit(2)", 2, "static Target::Method(Int32<2>)", 782)
+                );
+        }
+
+        [TestMethod]
+        public void mock_void_method()
+        {
+            Mocker.MockVoid(typeof(Target), "MethodVoid", Arg.Any<int>());
+
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.CallMethodVoid(1);
+            Target.CallMethodVoid(1);
+            Target.CallMethodVoid(2);
+            Target.CallMethodVoid(2);
+
+            ExecuteFailed(() =>
+            {
+                Verifier
+                    .Once().Called(typeof(Target), "MethodVoid").Args(1)
+                    .Once().Called(typeof(Target), "MethodVoid").Args(2)
+                    .Verify();
+            });
+
+            VerifyMessage(9,
+                Expected("Expected to call 1 times, but actually call 2 times", 1),
+                Expected("Expected to call 1 times, but actually call 2 times", 2),
+                Invocation2("hit(1)", 1, "static Target::MethodVoid(Int32<1>)", 791),
+                Invocation2("hit(2)", 1, "static Target::MethodVoid(Int32<1>)", 791),
+                Invocation2("hit(1)", 2, "static Target::MethodVoid(Int32<2>)", 791),
+                Invocation2("hit(2)", 2, "static Target::MethodVoid(Int32<2>)", 791)
                 );
         }
     }

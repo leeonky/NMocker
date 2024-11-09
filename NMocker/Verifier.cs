@@ -115,6 +115,36 @@ namespace NMocker
                 return this;
             }
 
+            public VerificationGroupBuilder Called(Type type, string member, [CallerLineNumber] int line = 0, [CallerFilePath] string file = "")
+            {
+                return new VerificationGroupBuilder(type, member, line, file, this);
+            }
+
+            public class VerificationGroupBuilder
+            {
+                private readonly Type type;
+                private readonly string member;
+                private readonly int line;
+                private readonly string file;
+                private readonly VerificationGroup verificationGroup;
+
+                public VerificationGroupBuilder(Type type, string member, int line, string file, VerificationGroup verificationGroup)
+                {
+                    this.verificationGroup = verificationGroup;
+                    this.type = type;
+                    this.member = member;
+                    this.line = line;
+                    this.file = file;
+                }
+
+                public VerificationGroup Args(params object[] args)
+                {
+                    verificationGroup.verifications.Add(new Verification(InvocationMatcher.Create(type, member, args),
+                        string.Format("{0}:{1}", file, line)));
+                    return verificationGroup;
+                }
+            }
+
             public void Verify()
             {
                 List<HandledInvocation> handledInvocations = new List<HandledInvocation>();
