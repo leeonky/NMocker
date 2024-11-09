@@ -39,7 +39,19 @@ namespace NMocker
         public static InvocationMatcher Create(Type type, string methodName, object[] args)
         {
             var argMatchers = args.Select(CastToMatcher).ToList();
-            List<MethodInfo> methods = FindMethod(type, methodName, argMatchers);
+            List<MethodInfo> methods = FindMethodOrGetter(type, methodName, argMatchers);
+            return Create(argMatchers, methods);
+        }
+
+        public static InvocationMatcher CreateVoid(Type type, string methodName, object[] args)
+        {
+            var argMatchers = args.Select(CastToMatcher).ToList();
+            List<MethodInfo> methods = FindMethodOrSetter(type, methodName, argMatchers);
+            return Create(argMatchers, methods);
+        }
+
+        private static InvocationMatcher Create(List<ArgMatcher> argMatchers, List<MethodInfo> methods)
+        {
             if (!methods.Any())
                 throw new ArgumentException("No matching method found");
             if (methods.Count > 1)
@@ -48,9 +60,15 @@ namespace NMocker
             return new InvocationMatcher(methods[0], argMatchers);
         }
 
-        private static List<MethodInfo> FindMethod(Type type, string methodName, List<ArgMatcher> argMatchers)
+        private static List<MethodInfo> FindMethodOrGetter(Type type, string methodName, List<ArgMatcher> argMatchers)
         {
             return type.GetDeclaredProperties().Where(p => p.CanRead && p.Name == methodName).Select(p => p.GetMethod).Where(m => m.IsStatic)
+                .Concat(type.GetDeclaredMethods().Where(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m, argMatchers))).ToList();
+        }
+
+        private static List<MethodInfo> FindMethodOrSetter(Type type, string methodName, List<ArgMatcher> argMatchers)
+        {
+            return type.GetDeclaredProperties().Where(p => p.CanWrite && p.Name == methodName).Select(p => p.SetMethod).Where(m => m.IsStatic)
                 .Concat(type.GetDeclaredMethods().Where(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m, argMatchers))).ToList();
         }
 

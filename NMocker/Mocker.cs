@@ -54,7 +54,7 @@ namespace NMocker
 
         public static Mock WhenVoid(Type type, string method, params object[] args)
         {
-            return new Mock(InvocationMatcher.Create(type, method, args == null ? new object[] { null } : args));
+            return new Mock(InvocationMatcher.CreateVoid(type, method, args == null ? new object[] { null } : args));
         }
 
         public void ThenCallActual()
