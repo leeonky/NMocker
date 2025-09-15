@@ -88,3 +88,19 @@ dotnet test TestNMocker/TestNMocker.csproj
 - Add corresponding test cases in `TestNMocker/`
 - Consider Harmony limitations and .NET Framework compatibility
 - Maintain expression tree parsing in `InvocationMatcher.Create()`
+
+# Development Process
+
+## Steps
+Every code change goes through one of the following three phases. Proceed step by step. After running any tests, please show the test run results.
+
+### Add New Tests
+The main goal of this phase is to add or modify test code based on user requirements, ultimately achieving failing test information that is sufficient to determine that the code behavior **does not conform** to the test requirements. **Never modify production code in this step**. After modifying the tests, you can run the tests directly without confirmation.
+
+When generating test scenarios, **be sure not to add unnecessary test data** and ensure proper indentation alignment.
+
+### Add Functionality
+The main goal of this phase is to modify implementation code to make it pass the newly added test code and pass all existing tests. **Please be sure to obtain test run results and confirm they pass**. After modifying implementation code, you can run tests directly and confirm they pass. **Please be sure to write only the minimal implementation code to pass the tests**.
+
+### Refactoring
+The main goal of this phase is to modify implementation code according to user prompts to adjust the design. Or perform automatic review to remove duplicate code, redundant design, and inconsistent design. This process should not break existing tests. After modifying any code, please run tests and confirm they pass. **After refactoring is complete, please run all tests, not just builds**.
