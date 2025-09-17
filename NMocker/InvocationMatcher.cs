@@ -62,14 +62,14 @@ namespace NMocker
 
         private static List<MethodInfo> FindMethodOrGetter(Type type, string methodName, List<ArgMatcher> argMatchers)
         {
-            return type.GetDeclaredProperties().Where(p => p.CanRead && p.Name == methodName).Select(p => p.GetMethod).Where(m => m.IsStatic)
-                .Concat(type.GetDeclaredMethods().Where(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m, argMatchers))).ToList();
+            return type.GetDeclaredProperties().Where(p => p.CanRead && p.Name == methodName).Select(p => p.GetMethod)
+                .Concat(type.GetDeclaredMethods().Where(m => m.Name == methodName && ArgTypesMatched(m, argMatchers))).ToList();
         }
 
         private static List<MethodInfo> FindMethodOrSetter(Type type, string methodName, List<ArgMatcher> argMatchers)
         {
-            return type.GetDeclaredProperties().Where(p => p.CanWrite && p.Name == methodName).Select(p => p.SetMethod).Where(m => m.IsStatic)
-                .Concat(type.GetDeclaredMethods().Where(m => m.IsStatic && m.Name == methodName && ArgTypesMatched(m, argMatchers))).ToList();
+            return type.GetDeclaredProperties().Where(p => p.CanWrite && p.Name == methodName).Select(p => p.SetMethod)
+                .Concat(type.GetDeclaredMethods().Where(m => m.Name == methodName && ArgTypesMatched(m, argMatchers))).ToList();
         }
 
         private static bool ArgTypesMatched(MethodInfo m, List<ArgMatcher> argMatchers)
