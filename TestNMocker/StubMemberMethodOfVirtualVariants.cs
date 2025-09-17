@@ -55,6 +55,7 @@ namespace TestNMocker
         public abstract class Target
         {
             public abstract int method();
+            protected abstract int protectedMethod();
         }
 
         private TargetImpl targetImpl;
@@ -76,6 +77,17 @@ namespace TestNMocker
                 called = true;
                 return 42;
             }
+
+            protected override int protectedMethod()
+            {
+                called = true;
+                return 42;
+            }
+
+            public int invokeProtectedMethod()
+            {
+                return protectedMethod();
+            }
         }
 
         [TestMethod]
@@ -84,6 +96,15 @@ namespace TestNMocker
             Mocker.When(typeof(TargetImpl), "method").ThenReturn(5);
 
             Assert.AreEqual(5, targetImpl.method());
+            Assert.IsFalse(targetImpl.called);
+        }
+
+        [TestMethod]
+        public void protected_method_name_stub_member_method_with_returned_value()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod").ThenReturn(5);
+
+            Assert.AreEqual(5, targetImpl.invokeProtectedMethod());
             Assert.IsFalse(targetImpl.called);
         }
 
@@ -96,6 +117,11 @@ namespace TestNMocker
         public class Target
         {
             public virtual int method()
+            {
+                return 12306;
+            }
+
+            protected virtual int protectedMethod()
             {
                 return 12306;
             }
@@ -120,6 +146,17 @@ namespace TestNMocker
                 called = true;
                 return 42;
             }
+
+            protected override int protectedMethod()
+            {
+                called = true;
+                return 42;
+            }
+
+            public int invokeProtectedMethod()
+            {
+                return protectedMethod();
+            }
         }
 
         [TestMethod]
@@ -128,6 +165,15 @@ namespace TestNMocker
             Mocker.When(typeof(TargetImpl), "method").ThenReturn(5);
 
             Assert.AreEqual(5, targetImpl.method());
+            Assert.IsFalse(targetImpl.called);
+        }
+
+        [TestMethod]
+        public void protected_method_name_stub_member_method_with_returned_value()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod").ThenReturn(5);
+
+            Assert.AreEqual(5, targetImpl.invokeProtectedMethod());
             Assert.IsFalse(targetImpl.called);
         }
 
@@ -192,6 +238,8 @@ namespace TestNMocker
         {
             public abstract int method(int i);
             public abstract int method(string s);
+            protected abstract int protectedMethod(int i);
+            protected abstract int protectedMethod(string s);
         }
 
         private TargetImpl target;
@@ -218,6 +266,27 @@ namespace TestNMocker
             {
                 return 200;
             }
+
+            protected override int protectedMethod(int i)
+            {
+                called = true;
+                return 100;
+            }
+
+            protected override int protectedMethod(string s)
+            {
+                return 200;
+            }
+
+            public int invokeProtectedMethod(int i)
+            {
+                return protectedMethod(i);
+            }
+
+            public int invokeProtectedMethod(string s)
+            {
+                return protectedMethod(s);
+            }
         }
 
         [TestMethod]
@@ -235,6 +304,22 @@ namespace TestNMocker
             Assert.AreEqual(100, target.method(100));
             Assert.AreEqual(200, target.method("xxx"));
         }
+
+        [TestMethod]
+        public void protected_support_stub_with_const_arg_and_return_default_when_not_matches_arg()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod", 1).ThenReturn(5);
+            Mocker.When(typeof(TargetImpl), "protectedMethod", 2).ThenReturn(10);
+            Mocker.When(typeof(TargetImpl), "protectedMethod", "hello").ThenReturn(20);
+            Mocker.When(typeof(TargetImpl), "protectedMethod", "world").ThenReturn(30);
+
+            Assert.AreEqual(5, target.invokeProtectedMethod(1));
+            Assert.AreEqual(10, target.invokeProtectedMethod(2));
+            Assert.AreEqual(20, target.invokeProtectedMethod("hello"));
+            Assert.AreEqual(30, target.invokeProtectedMethod("world"));
+            Assert.AreEqual(100, target.invokeProtectedMethod(100));
+            Assert.AreEqual(200, target.invokeProtectedMethod("xxx"));
+        }
     }
 
     [TestClass]
@@ -248,6 +333,16 @@ namespace TestNMocker
             }
 
             public virtual int method(string s)
+            {
+                return 400;
+            }
+
+            protected virtual int protectedMethod(int i)
+            {
+                return 300;
+            }
+
+            protected virtual int protectedMethod(string s)
             {
                 return 400;
             }
@@ -277,6 +372,27 @@ namespace TestNMocker
             {
                 return 200;
             }
+
+            protected override int protectedMethod(int i)
+            {
+                called = true;
+                return 100;
+            }
+
+            protected override int protectedMethod(string s)
+            {
+                return 200;
+            }
+
+            public int invokeProtectedMethod(int i)
+            {
+                return protectedMethod(i);
+            }
+
+            public int invokeProtectedMethod(string s)
+            {
+                return protectedMethod(s);
+            }
         }
 
         [TestMethod]
@@ -293,6 +409,22 @@ namespace TestNMocker
             Assert.AreEqual(30, target.method("world"));
             Assert.AreEqual(100, target.method(100));
             Assert.AreEqual(200, target.method("xxx"));
+        }
+
+        [TestMethod]
+        public void protected_support_stub_with_const_arg_and_return_default_when_not_matches_arg()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod", 1).ThenReturn(5);
+            Mocker.When(typeof(TargetImpl), "protectedMethod", 2).ThenReturn(10);
+            Mocker.When(typeof(TargetImpl), "protectedMethod", "hello").ThenReturn(20);
+            Mocker.When(typeof(TargetImpl), "protectedMethod", "world").ThenReturn(30);
+
+            Assert.AreEqual(5, target.invokeProtectedMethod(1));
+            Assert.AreEqual(10, target.invokeProtectedMethod(2));
+            Assert.AreEqual(20, target.invokeProtectedMethod("hello"));
+            Assert.AreEqual(30, target.invokeProtectedMethod("world"));
+            Assert.AreEqual(100, target.invokeProtectedMethod(100));
+            Assert.AreEqual(200, target.invokeProtectedMethod("xxx"));
         }
     }
 
@@ -342,6 +474,7 @@ namespace TestNMocker
         public abstract class Target
         {
             public abstract int method(ref int i);
+            protected abstract int protectedMethod(ref int i);
         }
 
         private TargetImpl target;
@@ -363,6 +496,18 @@ namespace TestNMocker
                 called = true;
                 return 100;
             }
+
+            protected override int protectedMethod(ref int i)
+            {
+                i += 100;
+                called = true;
+                return 100;
+            }
+
+            public int invokeProtectedMethod(ref int i)
+            {
+                return protectedMethod(ref i);
+            }
         }
 
         [TestMethod]
@@ -374,6 +519,16 @@ namespace TestNMocker
             Assert.AreEqual(5, target.method(ref i));
             Assert.IsFalse(target.called);
         }
+
+        [TestMethod]
+        public void protected_support_arg_is_match()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod", Arg.Is(1).Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, target.invokeProtectedMethod(ref i));
+            Assert.IsFalse(target.called);
+        }
     }
 
     [TestClass]
@@ -382,6 +537,12 @@ namespace TestNMocker
         public class Target
         {
             public virtual int method(ref int i)
+            {
+                i += 200;
+                return 300;
+            }
+
+            protected virtual int protectedMethod(ref int i)
             {
                 i += 200;
                 return 300;
@@ -407,6 +568,18 @@ namespace TestNMocker
                 called = true;
                 return 100;
             }
+
+            protected override int protectedMethod(ref int i)
+            {
+                i += 100;
+                called = true;
+                return 100;
+            }
+
+            public int invokeProtectedMethod(ref int i)
+            {
+                return protectedMethod(ref i);
+            }
         }
 
         [TestMethod]
@@ -416,6 +589,16 @@ namespace TestNMocker
 
             int i = 1;
             Assert.AreEqual(5, target.method(ref i));
+            Assert.IsFalse(target.called);
+        }
+
+        [TestMethod]
+        public void protected_support_arg_is_match()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod", Arg.Is(1).Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, target.invokeProtectedMethod(ref i));
             Assert.IsFalse(target.called);
         }
     }
@@ -467,6 +650,7 @@ namespace TestNMocker
         public abstract class Target
         {
             public abstract int method(out int i);
+            protected abstract int protectedMethod(out int i);
         }
 
         private TargetImpl target;
@@ -485,6 +669,17 @@ namespace TestNMocker
                 i = 1000;
                 return 100;
             }
+
+            protected override int protectedMethod(out int i)
+            {
+                i = 1000;
+                return 100;
+            }
+
+            public int invokeProtectedMethod(out int i)
+            {
+                return protectedMethod(out i);
+            }
         }
 
         [TestMethod]
@@ -500,6 +695,20 @@ namespace TestNMocker
             Assert.AreEqual(999, target.method(out i));
             Assert.AreEqual(1000, i);
         }
+
+        [TestMethod]
+        public void protected_support_out_arg_by_lambda()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod", Arg.Out<int>()).Then(args =>
+            {
+                args[0] = 1000;
+                return 999;
+            });
+
+            int i;
+            Assert.AreEqual(999, target.invokeProtectedMethod(out i));
+            Assert.AreEqual(1000, i);
+        }
     }
 
     [TestClass]
@@ -508,6 +717,12 @@ namespace TestNMocker
         public class Target
         {
             public virtual int method(out int i)
+            {
+                i = 2000;
+                return 200;
+            }
+
+            protected virtual int protectedMethod(out int i)
             {
                 i = 2000;
                 return 200;
@@ -530,6 +745,17 @@ namespace TestNMocker
                 i = 1000;
                 return 100;
             }
+
+            protected override int protectedMethod(out int i)
+            {
+                i = 1000;
+                return 100;
+            }
+
+            public int invokeProtectedMethod(out int i)
+            {
+                return protectedMethod(out i);
+            }
         }
 
         [TestMethod]
@@ -543,6 +769,20 @@ namespace TestNMocker
 
             int i;
             Assert.AreEqual(999, target.method(out i));
+            Assert.AreEqual(1000, i);
+        }
+
+        [TestMethod]
+        public void protected_support_out_arg_by_lambda()
+        {
+            Mocker.When(typeof(TargetImpl), "protectedMethod", Arg.Out<int>()).Then(args =>
+            {
+                args[0] = 1000;
+                return 999;
+            });
+
+            int i;
+            Assert.AreEqual(999, target.invokeProtectedMethod(out i));
             Assert.AreEqual(1000, i);
         }
     }
@@ -590,6 +830,7 @@ namespace TestNMocker
         public abstract class Target
         {
             public abstract void method(int i);
+            protected abstract void protectedMethod(int i);
         }
 
         private TargetImpl target;
@@ -610,6 +851,16 @@ namespace TestNMocker
             {
                 value = i;
             }
+
+            protected override void protectedMethod(int i)
+            {
+                value = i;
+            }
+
+            public void invokeProtectedMethod(int i)
+            {
+                protectedMethod(i);
+            }
         }
 
         [TestMethod]
@@ -617,6 +868,14 @@ namespace TestNMocker
         {
             Mocker.WhenVoid(typeof(TargetImpl), "method", 10).ThenCallActual();
             target.method(10);
+            Assert.AreEqual(10, target.value);
+        }
+
+        [TestMethod]
+        public void protected_support_call_actual()
+        {
+            Mocker.WhenVoid(typeof(TargetImpl), "protectedMethod", 10).ThenCallActual();
+            target.invokeProtectedMethod(10);
             Assert.AreEqual(10, target.value);
         }
     }
@@ -627,6 +886,11 @@ namespace TestNMocker
         public class Target
         {
             public virtual void method(int i)
+            {
+                // Base implementation does nothing
+            }
+
+            protected virtual void protectedMethod(int i)
             {
                 // Base implementation does nothing
             }
@@ -650,6 +914,16 @@ namespace TestNMocker
             {
                 value = i;
             }
+
+            protected override void protectedMethod(int i)
+            {
+                value = i;
+            }
+
+            public void invokeProtectedMethod(int i)
+            {
+                protectedMethod(i);
+            }
         }
 
         [TestMethod]
@@ -657,6 +931,14 @@ namespace TestNMocker
         {
             Mocker.WhenVoid(typeof(TargetImpl), "method", 10).ThenCallActual();
             target.method(10);
+            Assert.AreEqual(10, target.value);
+        }
+
+        [TestMethod]
+        public void protected_support_call_actual()
+        {
+            Mocker.WhenVoid(typeof(TargetImpl), "protectedMethod", 10).ThenCallActual();
+            target.invokeProtectedMethod(10);
             Assert.AreEqual(10, target.value);
         }
     }
