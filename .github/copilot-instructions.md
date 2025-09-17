@@ -92,7 +92,7 @@ dotnet test TestNMocker/TestNMocker.csproj
 # Development Process
 
 ## Steps
-Every code change goes through one of the following three phases. Proceed step by step. After running any tests, please show the test run results.
+Every code change goes through one of the following three phases. Proceed step by step but please stop when one step is complete. After running any tests, please show the test run results.
 
 ### Add New Tests
 The main goal of this phase is to add or modify test code based on user requirements, ultimately achieving failing test information that is sufficient to determine that the code behavior **does not conform** to the test requirements. **Never modify production code in this step**. After modifying the tests, you can run the tests directly without confirmation.
