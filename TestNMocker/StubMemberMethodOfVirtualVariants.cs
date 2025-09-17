@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using NMocker;
 using System;
 using System.Collections.Generic;
@@ -44,6 +45,16 @@ namespace TestNMocker
 
             Assert.AreEqual(5, targetImpl.method());
             Assert.IsFalse(targetImpl.called);
+        }
+
+        [TestMethod]
+        public void lambda_stub_member_method_with_returned_value_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method").ThenReturn(5);
+
+            Assert.AreEqual(5, dynamicObject.method());
         }
 
     }
@@ -97,6 +108,16 @@ namespace TestNMocker
 
             Assert.AreEqual(5, targetImpl.method());
             Assert.IsFalse(targetImpl.called);
+        }
+
+        [TestMethod]
+        public void method_name_stub_member_method_with_returned_value_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method").ThenReturn(5);
+
+            Assert.AreEqual(5, dynamicObject.method());
         }
 
         [TestMethod]
@@ -169,6 +190,16 @@ namespace TestNMocker
         }
 
         [TestMethod]
+        public void method_name_stub_member_method_with_returned_value_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method").ThenReturn(5);
+
+            Assert.AreEqual(5, dynamicObject.method());
+        }
+
+        [TestMethod]
         public void protected_method_name_stub_member_method_with_returned_value()
         {
             Mocker.When(typeof(TargetImpl), "protectedMethod").ThenReturn(5);
@@ -228,6 +259,22 @@ namespace TestNMocker
             Assert.AreEqual(30, target.method("world"));
             Assert.AreEqual(100, target.method(100));
             Assert.AreEqual(200, target.method("xxx"));
+        }
+
+        [TestMethod]
+        public void support_stub_with_const_arg_and_return_default_when_not_matches_arg_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", 1).ThenReturn(5);
+            Mocker.When(dynamicObject.GetType(), "method", 2).ThenReturn(10);
+            Mocker.When(dynamicObject.GetType(), "method", "hello").ThenReturn(20);
+            Mocker.When(dynamicObject.GetType(), "method", "world").ThenReturn(30);
+
+            Assert.AreEqual(5, dynamicObject.method(1));
+            Assert.AreEqual(10, dynamicObject.method(2));
+            Assert.AreEqual(20, dynamicObject.method("hello"));
+            Assert.AreEqual(30, dynamicObject.method("world"));
         }
     }
 
@@ -319,6 +366,22 @@ namespace TestNMocker
             Assert.AreEqual(30, target.invokeProtectedMethod("world"));
             Assert.AreEqual(100, target.invokeProtectedMethod(100));
             Assert.AreEqual(200, target.invokeProtectedMethod("xxx"));
+        }
+
+        [TestMethod]
+        public void support_stub_with_const_arg_and_return_default_when_not_matches_arg_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", 1).ThenReturn(5);
+            Mocker.When(dynamicObject.GetType(), "method", 2).ThenReturn(10);
+            Mocker.When(dynamicObject.GetType(), "method", "hello").ThenReturn(20);
+            Mocker.When(dynamicObject.GetType(), "method", "world").ThenReturn(30);
+
+            Assert.AreEqual(5, dynamicObject.method(1));
+            Assert.AreEqual(10, dynamicObject.method(2));
+            Assert.AreEqual(20, dynamicObject.method("hello"));
+            Assert.AreEqual(30, dynamicObject.method("world"));
         }
     }
 
@@ -426,6 +489,22 @@ namespace TestNMocker
             Assert.AreEqual(100, target.invokeProtectedMethod(100));
             Assert.AreEqual(200, target.invokeProtectedMethod("xxx"));
         }
+
+        [TestMethod]
+        public void support_stub_with_const_arg_and_return_default_when_not_matches_arg_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", 1).ThenReturn(5);
+            Mocker.When(dynamicObject.GetType(), "method", 2).ThenReturn(10);
+            Mocker.When(dynamicObject.GetType(), "method", "hello").ThenReturn(20);
+            Mocker.When(dynamicObject.GetType(), "method", "world").ThenReturn(30);
+
+            Assert.AreEqual(5, dynamicObject.method(1));
+            Assert.AreEqual(10, dynamicObject.method(2));
+            Assert.AreEqual(20, dynamicObject.method("hello"));
+            Assert.AreEqual(30, dynamicObject.method("world"));
+        }
     }
 
     [TestClass]
@@ -465,6 +544,17 @@ namespace TestNMocker
             int i = 1;
             Assert.AreEqual(5, target.method(ref i));
             Assert.IsFalse(target.called);
+        }
+
+        [TestMethod]
+        public void support_arg_is_match_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", Arg.Is(1).Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, dynamicObject.method(ref i));
         }
     }
 
@@ -528,6 +618,17 @@ namespace TestNMocker
             int i = 1;
             Assert.AreEqual(5, target.invokeProtectedMethod(ref i));
             Assert.IsFalse(target.called);
+        }
+
+        [TestMethod]
+        public void support_arg_is_match_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", Arg.Is(1).Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, dynamicObject.method(ref i));
         }
     }
 
@@ -601,6 +702,17 @@ namespace TestNMocker
             Assert.AreEqual(5, target.invokeProtectedMethod(ref i));
             Assert.IsFalse(target.called);
         }
+
+        [TestMethod]
+        public void support_arg_is_match_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", Arg.Is(1).Ref()).ThenReturn(5);
+
+            int i = 1;
+            Assert.AreEqual(5, dynamicObject.method(ref i));
+        }
     }
 
     [TestClass]
@@ -640,6 +752,22 @@ namespace TestNMocker
 
             int i;
             Assert.AreEqual(999, target.method(out i));
+            Assert.AreEqual(1000, i);
+        }
+
+        [TestMethod]
+        public void support_out_arg_by_lambda_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", Arg.Out<int>()).Then(args =>
+            {
+                args[0] = 1000;
+                return 999;
+            });
+
+            int i;
+            Assert.AreEqual(999, dynamicObject.method(out i));
             Assert.AreEqual(1000, i);
         }
     }
@@ -707,6 +835,22 @@ namespace TestNMocker
 
             int i;
             Assert.AreEqual(999, target.invokeProtectedMethod(out i));
+            Assert.AreEqual(1000, i);
+        }
+
+        [TestMethod]
+        public void support_out_arg_by_lambda_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", Arg.Out<int>()).Then(args =>
+            {
+                args[0] = 1000;
+                return 999;
+            });
+
+            int i;
+            Assert.AreEqual(999, dynamicObject.method(out i));
             Assert.AreEqual(1000, i);
         }
     }
@@ -785,6 +929,22 @@ namespace TestNMocker
             Assert.AreEqual(999, target.invokeProtectedMethod(out i));
             Assert.AreEqual(1000, i);
         }
+
+        [TestMethod]
+        public void support_out_arg_by_lambda_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), "method", Arg.Out<int>()).Then(args =>
+            {
+                args[0] = 1000;
+                return 999;
+            });
+
+            int i;
+            Assert.AreEqual(999, dynamicObject.method(out i));
+            Assert.AreEqual(1000, i);
+        }
     }
 
     [TestClass]
@@ -821,6 +981,15 @@ namespace TestNMocker
             Mocker.When(() => target.method(10)).ThenCallActual();
             target.method(10);
             Assert.AreEqual(10, target.value);
+        }
+
+        [TestMethod]
+        public void support_call_actual_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.WhenVoid(dynamicObject.GetType(), "method", 10).ThenCallActual();
+            dynamicObject.method(10);
         }
     }
 
@@ -877,6 +1046,15 @@ namespace TestNMocker
             Mocker.WhenVoid(typeof(TargetImpl), "protectedMethod", 10).ThenCallActual();
             target.invokeProtectedMethod(10);
             Assert.AreEqual(10, target.value);
+        }
+
+        [TestMethod]
+        public void support_call_actual_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.WhenVoid(dynamicObject.GetType(), "method", 10).ThenCallActual();
+            dynamicObject.method(10);
         }
     }
 
@@ -940,6 +1118,15 @@ namespace TestNMocker
             Mocker.WhenVoid(typeof(TargetImpl), "protectedMethod", 10).ThenCallActual();
             target.invokeProtectedMethod(10);
             Assert.AreEqual(10, target.value);
+        }
+
+        [TestMethod]
+        public void support_call_actual_of_dynamic_object()
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.WhenVoid(dynamicObject.GetType(), "method", 10).ThenCallActual();
+            dynamicObject.method(10);
         }
     }
 }
