@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using NMocker;
 using System;
 using System.Collections.Generic;
@@ -45,6 +46,18 @@ namespace TestNMocker
 
             Assert.AreEqual(5, targetImpl.Property);
             Assert.IsFalse(targetImpl.called);
+        }
+
+        [DataTestMethod]
+        [DataRow("get_Property")]
+        [DataRow("Property")]
+        public void lambda_stub_member_property_with_returned_value_of_dynamic_object(String stubMember)
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), stubMember).ThenReturn(5);
+
+            Assert.AreEqual(5, dynamicObject.Property);
         }
     }
 
@@ -101,6 +114,18 @@ namespace TestNMocker
 
             Assert.AreEqual(5, targetImpl.Property);
             Assert.IsFalse(targetImpl.called);
+        }
+
+        [DataTestMethod]
+        [DataRow("get_Property")]
+        [DataRow("Property")]
+        public void property_name_stub_member_property_with_returned_value_of_dynamic_object(String stubMember)
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), stubMember).ThenReturn(5);
+
+            Assert.AreEqual(5, dynamicObject.Property);
         }
 
         [TestMethod]
@@ -181,6 +206,18 @@ namespace TestNMocker
             Assert.IsFalse(targetImpl.called);
         }
 
+        [DataTestMethod]
+        [DataRow("get_Property")]
+        [DataRow("Property")]
+        public void property_name_stub_member_property_with_returned_value_of_dynamic_object(String stubMember)
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.When(dynamicObject.GetType(), stubMember).ThenReturn(5);
+
+            Assert.AreEqual(5, dynamicObject.Property);
+        }
+
         [TestMethod]
         public void protected_property_name_stub_member_property_with_returned_value()
         {
@@ -228,6 +265,17 @@ namespace TestNMocker
             Mocker.WhenVoid(typeof(TargetImpl), "Property", 10).ThenCallActual();
             target.Property = 10;
             Assert.AreEqual(10, target.value);
+        }
+
+        [DataTestMethod]
+        [DataRow("set_Property")]
+        [DataRow("Property")]
+        public void support_call_actual_of_dynamic_object(String stubMember)
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.WhenVoid(dynamicObject.GetType(), stubMember, 10).ThenCallActual();
+            dynamicObject.Property = 10;
         }
     }
 
@@ -282,6 +330,17 @@ namespace TestNMocker
             Mocker.WhenVoid(typeof(TargetImpl), "Property", 10).ThenCallActual();
             target.Property = 10;
             Assert.AreEqual(10, target.value);
+        }
+
+        [DataTestMethod]
+        [DataRow("set_Property")]
+        [DataRow("Property")]
+        public void support_call_actual_of_dynamic_object(String stubMember)
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.WhenVoid(dynamicObject.GetType(), stubMember, 10).ThenCallActual();
+            dynamicObject.Property = 10;
         }
 
         [TestMethod]
@@ -357,6 +416,17 @@ namespace TestNMocker
             Mocker.WhenVoid(typeof(TargetImpl), "Property", 10).ThenCallActual();
             target.Property = 10;
             Assert.AreEqual(10, target.value);
+        }
+
+        [DataTestMethod]
+        [DataRow("set_Property")]
+        [DataRow("Property")]
+        public void support_call_actual_of_dynamic_object(String stubMember)
+        {
+            var dynamicObject = new Mock<Target>().Object;
+
+            Mocker.WhenVoid(dynamicObject.GetType(), stubMember, 10).ThenCallActual();
+            dynamicObject.Property = 10;
         }
 
         [TestMethod]
