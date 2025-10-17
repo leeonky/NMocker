@@ -513,6 +513,22 @@ namespace TestNMocker
         }
 
         [TestMethod]
+        public void support_call_actual_with_typeof_and_method_name()
+        {
+            Mocker.WhenVoid(typeof(Target), "method", Arg.Any<int>()).ThenCallActual();
+            target.method(10);
+            Assert.AreEqual(10, target.value);
+        }
+
+        [TestMethod]
+        public void support_call_default_with_typeof_and_method_name()
+        {
+            Mocker.WhenVoid(typeof(Target), "method", Arg.Any<int>()).ThenDefault();
+            target.method(10);
+            Assert.AreEqual(0, target.value);
+        }
+
+        [TestMethod]
         public void support_reference_method_by_string()
         {
             Mocker.WhenVoid(typeof(Target), "method", 10).Then(objs => target.value = 99);

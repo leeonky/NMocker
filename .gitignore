@@ -94,3 +94,4 @@ bower_components/
 .cr/
 .idea/
 .DS_Store
+.claude
