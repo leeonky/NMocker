@@ -923,5 +923,52 @@ namespace TestNMocker
                 .Verify();
         }
     }
+
+    [TestClass]
+    public class VerifyArgMatchWithSubClass : TestBase
+    {
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+            Mocker.When(() => Target.Method(Arg.Any<object>())).ThenDefault();
+        }
+
+        public class Target
+        {
+            public static void Method(object i)
+            {
+            }
+
+        }
+
+        [TestMethod]
+        public void arg_match_sub_class()
+        {
+            Target.Method(42);
+
+            Verifier.Called(() => Target.Method(42)).Verify();
+        }
+
+        Target target;
+        [TestMethod]
+        public void arg_not_match_sub_class_but_value_is_different()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            Target.Method(42);
+
+            ExecuteFailed(() =>
+            {
+                Verifier.Called(() => Target.Method(12306)).Verify();
+            });
+
+            VerifyMessage(5,
+                Expected("Expected to call at least 1 times, but actually call 0 times", 1),
+                Invocation("static Target::Method(Object<42>)", 1));
+
+            Verifier.Times(0).Called(() => Target.Method(12306)).Verify();
+        }
+
+    }
 }
 

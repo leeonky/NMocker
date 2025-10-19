@@ -745,7 +745,8 @@ namespace TestNMocker
 
         public class Target
         {
-            public int Property {
+            public int Property
+            {
                 get { return 0; }
                 set { }
             }
@@ -807,4 +808,53 @@ namespace TestNMocker
                 .Verify();
         }
     }
+
+    [TestClass]
+    public class VerifyArgMatchWithSubClassMember : TestBase
+    {
+        [TestInitialize]
+        public void setup()
+        {
+            Mocker.Clear();
+            target = new Target();
+            Mocker.When(() => target.Method(Arg.Any<object>())).ThenDefault();
+        }
+
+        public class Target
+        {
+            public void Method(object i)
+            {
+            }
+
+        }
+
+        [TestMethod]
+        public void arg_match_sub_class()
+        {
+            target.Method(42);
+
+            Verifier.Called(() => target.Method(42)).Verify();
+        }
+
+        Target target;
+        [TestMethod]
+        public void arg_not_match_sub_class_but_value_is_different()
+        {
+            stackFrame = new StackTrace(true).GetFrame(0);
+            target.Method(42);
+
+            ExecuteFailed(() =>
+            {
+                Verifier.Called(() => target.Method(12306)).Verify();
+            });
+
+            VerifyMessage(5,
+                Expected("Expected to call at least 1 times, but actually call 0 times", 1),
+                Invocation("Target::Method(Object<42>)", 1));
+
+            Verifier.Times(0).Called(() => target.Method(12306)).Verify();
+        }
+
+    }
+
 }

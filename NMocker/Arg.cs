@@ -52,7 +52,7 @@ namespace NMocker
         {
             if (value == null)
                 return !t.IsValueType || Nullable.GetUnderlyingType(t) != null;
-            return t == value.GetType();
+            return t == value.GetType() || t.IsAssignableFrom(value.GetType());
         }
     }
 
