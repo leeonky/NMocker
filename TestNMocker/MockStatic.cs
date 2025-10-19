@@ -95,9 +95,9 @@ namespace TestNMocker
                    }
                }).Select(l => "\n    " + l));
 
-            Assert.AreEqual($@"Unsatisfied invocation:
-{string.Join("\n", lines.Where(l => l is ExpectVerification).Select(line => "    " + line.ToString(verifyLineOffset, stackFrame)))}
-All invocations:{invocations}", exception.Message);
+            string expected = $"Unsatisfied invocation:\n{string.Join("\n", lines.Where(l => l is ExpectVerification).Select(line => "    " + line.ToString(verifyLineOffset, stackFrame)))}\nAll invocations:{invocations}";
+            string message = exception.Message;
+            Assert.AreEqual(expected, message);
         }
 
         public LineVerification Expected(string expect, int line)
@@ -862,7 +862,8 @@ All invocations:{invocations}", exception.Message);
 
         public class Target
         {
-            public static int Property {
+            public static int Property
+            {
                 get { return 0; }
                 set { }
             }

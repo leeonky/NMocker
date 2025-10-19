@@ -430,9 +430,7 @@ namespace TestNMocker
                 Mocker.When(typeof(Target), "method2", null).ThenReturn(1);
             });
 
-            Assert.AreEqual(@"Ambiguous method between the following:
-    Target::method2(String)
-    Target::method2(Object)", exception.Message);
+            Assert.AreEqual($"Ambiguous method between the following:\n    Target::method2(String)\n    Target::method2(Object)", exception.Message);
         }
 
         [TestMethod]
